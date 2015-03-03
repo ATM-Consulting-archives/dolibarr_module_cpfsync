@@ -10,3 +10,4 @@ cpfsyncAbout = About cpfsync
 cpfsyncDescCustomer=Enable synchronization of customers
 cpfsyncDescProduct=Enable synchronization of products
 cpfsyncDescInvoice=Enable synchronization of invoices
+cpfsyncDescUrlDistant=Please enter the URL of the remote htdocs

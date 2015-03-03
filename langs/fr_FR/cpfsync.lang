@@ -10,3 +10,4 @@ cpfsyncAbout = A propos du module cpfsync
 cpfsyncDescCustomer=Permet d'activer la synchronisation des clients
 cpfsyncDescProduct=Permet d'activer la synchronisation des produits
 cpfsyncDescInvoice=Permet d'activer la synchronisation des factures clients
+cpfsyncDescUrlDistant=Veuillez renseigner l'url du htdocs distant

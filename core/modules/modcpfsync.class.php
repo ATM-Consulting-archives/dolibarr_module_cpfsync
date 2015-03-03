@@ -114,6 +114,7 @@ class modcpfsync extends DolibarrModules
 			0 => array('CPFSYNC_SHARE_CUSTOMER', 'chaine', 1, 'Permet d\'activer la synchronisation des clients.', 1)
 			,1 => array('CPFSYNC_SHARE_PRODUCT', 'chaine', 1, 'Permet d\'activer la synchronisation des produits.', 1)
 			,2 => array('CPFSYNC_SHARE_INVOICE', 'chaine', 1, 'Permet d\'activer la synchronisation des factures.', 1)
+			,2 => array('CPFSYNC_URL_DISTANT', 'chaine', '', 'URL de l\'entité distant à qui on envoi les données.', 1)
 		);
 
 		// Array to add new pages in new tabs

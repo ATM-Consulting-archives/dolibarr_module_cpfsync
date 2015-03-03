@@ -110,7 +110,7 @@ $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("cpfsyncDescCustomer").'</td>';
 print '<td align="center" width="20">&nbsp;</td>';
-print '<td align="right" width="300">';
+print '<td align="right" width="600">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_CPFSYNC_SHARE_CUSTOMER">';
@@ -123,7 +123,7 @@ $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("cpfsyncDescProduct").'</td>';
 print '<td align="center" width="20">&nbsp;</td>';
-print '<td align="right" width="300">';
+print '<td align="right" width="600">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_CPFSYNC_SHARE_PRODUCT">';
@@ -136,7 +136,7 @@ $var=!$var;
 print '<tr '.$bc[$var].'>';
 print '<td>'.$langs->trans("cpfsyncDescInvoice").'</td>';
 print '<td align="center" width="20">&nbsp;</td>';
-print '<td align="right" width="300">';
+print '<td align="right" width="600">';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_CPFSYNC_SHARE_INVOICE">';
@@ -145,7 +145,23 @@ print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">'
 print '</form>';
 print '</td></tr>';
 
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("cpfsyncDescUrlDistant").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="600">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_CPFSYNC_URL_DISTANT">';
+print '<input size="60" type="text" name="CPFSYNC_URL_DISTANT" value="'.$conf->global->CPFSYNC_URL_DISTANT.'" />';
+print '<input id="testConnection" type="button" class="button" value="'.$langs->trans("Test").'">';
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
 print '</table>';
+
+echo cpfsyncAdminPrintJsTest();
 
 llxFooter();
 

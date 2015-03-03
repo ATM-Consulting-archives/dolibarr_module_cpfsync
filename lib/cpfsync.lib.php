@@ -53,3 +53,36 @@ function cpfsyncAdminPrepareHead()
 
     return $head;
 }
+
+
+function cpfsyncAdminPrintJsTest()
+{
+	$res = '<script type="text/javascript">';
+	$res.= '$(function() {
+		$("#testConnection").unbind().click(function() {
+			var url = $("input[name=CPFSYNC_URL_DISTANT]").val()+"/custom/cpfsync/script/interface.php";
+			$.ajax({
+				url:url
+				,type:"POST"
+				,data:{
+					action:"test"
+				}
+				,dataType:"json"
+				,success:function(res) {
+					console.log(url);
+					if (res == "ok") {
+						$.jnotify("Connexion ok", "ok");
+					} else {
+						$.jnotify("Connexion ko", "error");
+					}
+				}
+				,error: function() {
+					$.jnotify("Erreur lors du test", "error");
+				}
+			});
+		});
+	})';
+	$res.= '</script>';
+	
+	return $res;
+}
