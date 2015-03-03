@@ -5,3 +5,8 @@ ATMAbout = This module has been developed by <a href="http://www.atm-consulting.
 
 cpfsyncSetup = cpfsync module setup
 cpfsyncAbout = About cpfsync
+
+#Configuration
+cpfsyncDescCustomer=Enable synchronization of customers
+cpfsyncDescProduct=Enable synchronization of products
+cpfsyncDescInvoice=Enable synchronization of invoices

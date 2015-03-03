@@ -48,10 +48,8 @@ class Interfacecpfsynctrigger
         $this->db = $db;
 
         $this->name = preg_replace('/^Interface/i', '', get_class($this));
-        $this->family = "demo";
-        $this->description = "Triggers of this module are empty functions."
-            . "They have no effect."
-            . "They are provided for tutorial purpose only.";
+        $this->family = "ATM";
+        $this->description = "Trigger du module cpfsync..";
         // 'development', 'experimental', 'dolibarr' or version
         $this->version = 'development';
         $this->picto = 'cpfsync@cpfsync';
@@ -113,9 +111,50 @@ class Interfacecpfsynctrigger
      */
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
+    	if(!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
+    	dol_include_once('/cpfsync/config.php');
+		dol_include_once('/cpfsync/class/cpfsync.class.php');
+		
+		$type_object = false;
+		
+		// Companies / Customers
+        if (!empty($conf->global->CPFSYNC_SHARE_CUSTOMER) && ($action == 'COMPANY_CREATE' || $action == 'COMPANY_MODIFY' || $action == 'COMPANY_DELETE')) 
+        {
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			$type_object = 'Societe';
+        }
+		
+		// Products
+		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'PRODUCT_CREATE' || $action == 'PRODUCT_MODIFY' || $action == 'PRODUCT_DELETE')) 
+		{
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			$type_object = 'Product';
+        } 
+		
+		// Bills
+		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE')) 
+		{
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			$type_object = 'Facture';
+        }
+		
+		if ($type_object)
+		{
+			$PDOdb = new TPDOdb;
+			$event = new SyncEvent;
+			
+			$event->object = serialize($object);
+			$event->type_object = $type_object;
+			$event->doli_action = $action;
+			
+			$event->save($PDOdb);
+		}
+		
+		
         // Put here code you want to execute when a Dolibarr business events occurs.
         // Data and type of action are stored into $object and $action
         // Users
+        /*
         if ($action == 'USER_LOGIN') {
             dol_syslog(
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
@@ -178,22 +217,11 @@ class Interfacecpfsynctrigger
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
         }
+		*/
+		
+        
 
-        // Companies
-        elseif ($action == 'COMPANY_CREATE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'COMPANY_MODIFY') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'COMPANY_DELETE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        }
-
+		/*
         // Contacts
         elseif ($action == 'CONTACT_CREATE') {
             dol_syslog(
@@ -208,22 +236,10 @@ class Interfacecpfsynctrigger
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
         }
+		*/
 
-        // Products
-        elseif ($action == 'PRODUCT_CREATE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'PRODUCT_MODIFY') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'PRODUCT_DELETE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        }
 
+		/*
         // Customer orders
         elseif ($action == 'ORDER_CREATE') {
             dol_syslog(
@@ -355,50 +371,9 @@ class Interfacecpfsynctrigger
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
         }
+        */
 
-        // Bills
-        elseif ($action == 'BILL_CREATE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_CLONE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_MODIFY') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_VALIDATE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_BUILDDOC') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_SENTBYMAIL') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_CANCEL') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'BILL_DELETE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'LINEBILL_INSERT') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        } elseif ($action == 'LINEBILL_DELETE') {
-            dol_syslog(
-                "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
-            );
-        }
-
+        /*
         // Payments
         elseif ($action == 'PAYMENT_CUSTOMER_CREATE') {
             dol_syslog(
@@ -565,7 +540,8 @@ class Interfacecpfsynctrigger
                 "Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id
             );
         }
-
+		*/
+		
         return 0;
     }
 }

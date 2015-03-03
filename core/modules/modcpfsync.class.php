@@ -87,7 +87,7 @@ class modcpfsync extends DolibarrModules
 		//							'dir' => array('output' => 'othermodulename'),      // To force the default directories names
 		//							'workflow' => array('WORKFLOW_MODULE1_YOURACTIONTYPE_MODULE2'=>array('enabled'=>'! empty($conf->module1->enabled) && ! empty($conf->module2->enabled)', 'picto'=>'yourpicto@cpfsync')) // Set here all workflow context managed by module
 		//                        );
-		$this->module_parts = array();
+		$this->module_parts = array('triggers' => 1);
 
 		// Data directories to create when module is enabled.
 		// Example: this->dirs = array("/cpfsync/temp");
@@ -110,7 +110,11 @@ class modcpfsync extends DolibarrModules
 		// Example: $this->const=array(0=>array('MYMODULE_MYNEWCONST1','chaine','myvalue','This is a constant to add',1),
 		//                             1=>array('MYMODULE_MYNEWCONST2','chaine','myvalue','This is another constant to add',0, 'current', 1)
 		// );
-		$this->const = array();
+		$this->const = array(
+			0 => array('CPFSYNC_SHARE_CUSTOMER', 'chaine', 1, 'Permet d\'activer la synchronisation des clients.', 1)
+			,1 => array('CPFSYNC_SHARE_PRODUCT', 'chaine', 1, 'Permet d\'activer la synchronisation des produits.', 1)
+			,2 => array('CPFSYNC_SHARE_INVOICE', 'chaine', 1, 'Permet d\'activer la synchronisation des factures.', 1)
+		);
 
 		// Array to add new pages in new tabs
 		// Example: $this->tabs = array('objecttype:+tabname1:Title1:mylangfile@cpfsync:$user->rights->cpfsync->read:/cpfsync/mynewtab1.php?id=__ID__',  	// To add a new tab identified by code tabname1
@@ -264,7 +268,10 @@ class modcpfsync extends DolibarrModules
 	function remove($options='')
 	{
 		$sql = array();
-
+		
+		$url = dol_buildpath("/cpfsync/script/create-maj-base.php",2);
+		file_get_contents($url);
+		
 		return $this->_remove($sql, $options);
 	}
 
