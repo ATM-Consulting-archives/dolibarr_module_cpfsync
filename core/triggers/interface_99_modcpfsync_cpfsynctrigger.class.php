@@ -111,7 +111,9 @@ class Interfacecpfsynctrigger
      */
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
-    	if(!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
+    	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
+		
+    	if (!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
     	dol_include_once('/cpfsync/config.php');
 		dol_include_once('/cpfsync/class/cpfsync.class.php');
 		
@@ -151,6 +153,8 @@ class Interfacecpfsynctrigger
 		}
 		
 		
+        return 0;
+        
         // Put here code you want to execute when a Dolibarr business events occurs.
         // Data and type of action are stored into $object and $action
         // Users
@@ -542,6 +546,5 @@ class Interfacecpfsynctrigger
         }
 		*/
 		
-        return 0;
     }
 }

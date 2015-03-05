@@ -33,6 +33,7 @@ require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
 require_once '../lib/cpfsync.lib.php';
 
 // Translations
+$langs->load("admin");
 $langs->load("cpfsync@cpfsync");
 
 // Access control

@@ -33,6 +33,7 @@ require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
 require_once '../lib/cpfsync.lib.php';
 
 // Translations
+$langs->load("admin");
 $langs->load("cpfsync@cpfsync");
 
 // Access control
@@ -155,6 +156,19 @@ print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
 print '<input type="hidden" name="action" value="set_CPFSYNC_URL_DISTANT">';
 print '<input size="60" type="text" name="CPFSYNC_URL_DISTANT" value="'.$conf->global->CPFSYNC_URL_DISTANT.'" />';
 print '<input id="testConnection" type="button" class="button" value="'.$langs->trans("Test").'">';
+print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
+print '</form>';
+print '</td></tr>';
+
+$var=!$var;
+print '<tr '.$bc[$var].'>';
+print '<td>'.$langs->trans("cpfsyncDescUser").'</td>';
+print '<td align="center" width="20">&nbsp;</td>';
+print '<td align="right" width="600">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+print '<input type="hidden" name="action" value="set_CPFSYNC_ID_USER">';
+print $form->select_dolusers($conf->global->CPFSYNC_ID_USER, "CPFSYNC_ID_USER");
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</form>';
 print '</td></tr>';
