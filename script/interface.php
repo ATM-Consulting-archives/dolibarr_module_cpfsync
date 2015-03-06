@@ -34,7 +34,6 @@ function traite_get(&$ATMdb, $action)
 			break;
 			
 		case 'refreshData':
-			
 			__out(_refreshData($ATMdb, $conf, $db), 'json');
 			break;
 			
@@ -106,7 +105,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-	
+	var_dump(json_decode($res));exit;
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -185,12 +184,14 @@ function _create(&$db, &$user, $class, $object)
 
 function _update(&$db, &$user, $class, $object)
 {
-	$localObject = clone $object;
-	$localObject->__construct($db);
+	/*$localObject = clone $object;
+	$localObject->__construct($db);*/
+	$localObject = new $class($db);
 	
 	if ($localObject->fetch($object->id))
 	{
 		$localObject = $object;
+		$localObject->__construct($db);
 		
 		switch (strtolower($class)) {
 			case 'societe':
