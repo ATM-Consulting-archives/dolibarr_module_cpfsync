@@ -125,12 +125,13 @@ function _deleteCurrentEvent(&$ATMdb, $data)
 }
 
 function _refreshData(&$ATMdb, &$conf, &$db)
-{
+{	
 	dol_include_once('/core/lib/admin.lib.php');
 	dol_include_once('/user/class/user.class.php');
 	dol_include_once('/societe/class/client.class.php');
 	dol_include_once('/product/class/product.class.php');
 	dol_include_once('/compta/facture/class/facture.class.php');
+	dol_include_once('/core/lib/price.lib.php');
 	
 	//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 	dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
@@ -165,7 +166,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		{
 			$exist = _isExistingObject($db, strtolower($class), (int) $object->id);
 			
-			if ($exist) _update($db, $user, $class, $object);
+			if ($exist) _update($db, $user, $class, $object, $doli_action);
 			else _create($db, $user, $class, $object);
 		}	
 		
@@ -186,6 +187,11 @@ function _create(&$db, &$user, $class, $object)
 	$initDb = Closure::bind($initDb , $localObject, $class);
 	$initDb($db);
 	
+	if ($class == 'Facture')
+	{
+		_initDbFacture($db, $localObject);
+	}
+	
 	$localObject->create($user);
 }
 
@@ -195,11 +201,22 @@ function _update(&$db, &$user, $class, $object, $doli_action)
 	
 	if ($localObject->fetch($object->id))
 	{
+		if ($class == 'Facture')
+		{
+			$oldLines = $localObject->lines;	
+		}
+		
 		$localObject = clone $object;
 		
 		$initDb = function(&$db) { $this->db = &$db; };
 		$initDb = Closure::bind($initDb , $localObject, $class);
 		$initDb($db);
+		
+		if ($class == 'Facture')
+		{
+			_initDbFacture($db, $localObject);
+			_updateLines($db, $localObject, $oldLines);
+		}
 		
 		switch ($class) {
 			case 'Societe':
@@ -237,6 +254,38 @@ function _delete(&$db, $class, $object)
 			$localObject->delete();
 			break;
 	}
+}
+
+function _initDbFacture(&$db, &$localObject)
+{
+	foreach ($localObject->lines as $factureLigne)
+	{
+		$initDbFactureLigne = function(&$db) { $this->db = &$db; };
+		$initDbFactureLigne = Closure::bind($initDbFactureLigne , $factureLigne, 'FactureLigne');
+		$initDbFactureLigne($db);
+	}
+	
+	$initDbFactureClient = function(&$db) { $this->db = &$db; };
+	$initDbFactureClient = Closure::bind($initDbFactureClient , $localObject->client, 'Societe');
+	$initDbFactureClient($db);
+}
+
+function _updateLines(&$db, &$localObject, $oldLines)
+{
+	//Pour supprimer les lignes de la facture ou pour en ajouter l'objet facture doit être en "brouillon"
+	$localObject->brouillon = 1;
+	
+	foreach ($oldLines  as $line)
+	{
+		$localObject->deleteline($line->rowid);
+	}
+	
+	foreach ($localObject->lines as $newline)
+	{
+		$localObject->addline($newline->desc, $newline->subprice, $newline->qty, $newline->tva_tx, $newline->localtax1_tx, $newline->localtax2_tx, $newline->fk_product, $newline->remise_percent, $newline->date_start, $newline->date_end, $newline->fk_code_ventilation, $newline->info_bits, $newline->fk_remise_except, ($newline->total_tva > 0 || !$newline->fk_product ? 'HT' : 'TTC'), ($newline->subprice * (1 + ($newline->tva_tx / 100))), $newline->product_type, $newline->rang, $newline->special_code, $newline->origin, $newline->origin_id, $newline->fk_parent_line, $newline->fk_fournprice, $newline->pa_ht, $newline->label, $newline->array_options);
+	}
+	
+	$localObject->brouillon = 0;	
 }
 
 /*

@@ -49,7 +49,7 @@ class Interfacecpfsynctrigger
 
         $this->name = preg_replace('/^Interface/i', '', get_class($this));
         $this->family = "ATM";
-        $this->description = "Trigger du module cpfsync..";
+        $this->description = "Trigger du module cpfsync.";
         // 'development', 'experimental', 'dolibarr' or version
         $this->version = 'development';
         $this->picto = 'cpfsync@cpfsync';
@@ -138,6 +138,13 @@ class Interfacecpfsynctrigger
 		{
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 			$type_object = 'Facture';
+        }
+		
+		 // Payments
+        elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'PAYMENT_CUSTOMER_CREATE' || $action == 'PAYMENT_DELETE' || $action == 'PAYMENT_ADD_TO_BANK')) 
+        {
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			$type_object = 'Paiement';
         }
 		
 		if ($type_object)
