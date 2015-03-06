@@ -155,7 +155,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		}
 		elseif (in_array($doli_action, SyncEvent::$TActionModify))
 		{
-			_update($db, $user, $class, $object);
+			_update($db, $user, $class, $object, $doli_action);
 		}
 		elseif (in_array($doli_action, SyncEvent::$TActionDelete))
 		{
@@ -189,7 +189,7 @@ function _create(&$db, &$user, $class, $object)
 	$localObject->create($user);
 }
 
-function _update(&$db, &$user, $class, $object)
+function _update(&$db, &$user, $class, $object, $doli_action)
 {
 	$localObject = new $class($db);
 	
@@ -203,8 +203,12 @@ function _update(&$db, &$user, $class, $object)
 		
 		switch ($class) {
 			case 'Societe':
-			case 'Product':
 				$localObject->update($localObject->id, $user);
+				break;
+				
+			case 'Product':
+				if ($doli_action == 'PRODUCT_PRICE_MODIFY') $localObject->updatePrice($localObject->price, $localObject->price_base_type, $user, $localObject->tva_tx, $localObject->price_min);
+				else $localObject->update($localObject->id, $user);
 				break;
 			
 			default:
