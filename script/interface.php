@@ -93,15 +93,15 @@ function _sendData(&$ATMdb, $conf)
 	$url_distant = $conf->global->CPFSYNC_URL_DISTANT;
 	$url_distant.= '/custom/cpfsync/script/interface.php';
 
-	$data  = http_build_query($data);
+	$data_build  = http_build_query($data);
 
 	$context = stream_context_create(array(
 		'http' => array(
 		    'method' => 'POST',
-		    'content' => $data,
+		    'content' => $data_build,
 		    'timeout' => 40, //Si je n'ai pas de réponse dans les 40sec ma requête http s'arrête
 		    'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
-                . "Content-Length: " . strlen($data) . "\r\n",
+                . "Content-Length: " . strlen($data_build) . "\r\n",
 		)
 	));
 	
