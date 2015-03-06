@@ -104,7 +104,7 @@ function _sendData(&$ATMdb, $conf)
                 . "Content-Length: " . strlen($data) . "\r\n",
 		)
 	));
-	var_dump($data, $url_distant);
+	
 	$res = file_get_contents($url_distant, false, $context);
 	print $res;
 	/*
@@ -127,16 +127,11 @@ function _deleteCurrentEvent(&$ATMdb, $data)
 function _refreshData(&$ATMdb, &$conf, &$db)
 {
 	dol_include_once('/core/lib/admin.lib.php');
-	dol_include_once('/core/db/mysql.class.php');
 	dol_include_once('/user/class/user.class.php');
 	dol_include_once('/societe/class/client.class.php');
 	dol_include_once('/product/class/product.class.php');
 	dol_include_once('/compta/facture/class/facture.class.php');
 	
-	
-	
-	//$db=getDoliDBInstance($conf->db->type,$conf->db->host,$conf->db->user,DB_PASS,$conf->db->name,$conf->db->port);
-
 	//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 	dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
 
@@ -156,11 +151,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		if (in_array($doli_action, SyncEvent::$TActionCreate))
 		{
-			
-			_create($db, $user, $class, $object);
-			
-			var_dump($ATMdb->ExecuteAsArray("SELECT * FROM llx_societe"));
-			
+			_create($db, $user, $class, $object);			
 		}
 		elseif (in_array($doli_action, SyncEvent::$TActionModify))
 		{
@@ -186,20 +177,11 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 }
 
 function _create(&$db, &$user, $class, $object)
-{
-	//global $db;
-	//$localObject = new $class($db);
-	//$localObject = cast('Societe', $object, $db);;
-	//return $x;
-	
-	$localObject = new $class($db);
-	$localObject = $object;
-	$localObject->__construct($db);
-	$localObject->id = 0;
+{	
+	$localObject = clone $object;
+	$localObject->__construct($db); //Permet de re-définir $localObject->db qui est un attribut protected
 	
 	$localObject->create($user);
-	
-	var_dump($localObject);
 }
 
 function _update(&$db, &$user, $class, $object)
@@ -242,31 +224,6 @@ function _delete(&$db, $class, $object)
 			$localObject->delete();
 			break;
 	}
-}
-
-function cast($destination, $sourceObject, &$db = null)
-{
-	
-    if (is_string($destination)) {
-        $destination = new $destination($db);
-    }
-	
-    $sourceReflection = new ReflectionObject($sourceObject);
-    $destinationReflection = new ReflectionObject($destination);
-    $sourceProperties = $sourceReflection->getProperties();
-    foreach ($sourceProperties as $sourceProperty) {
-        $sourceProperty->setAccessible(true);
-        $name = $sourceProperty->getName();
-        $value = $sourceProperty->getValue($sourceObject);
-        if ($destinationReflection->hasProperty($name)) {
-            $propDest = $destinationReflection->getProperty($name);
-            $propDest->setAccessible(true);
-            $propDest->setValue($destination,$value);
-        } else {
-            $destination->$name = $value;
-        }
-    }
-    return $destination;
 }
 
 /*
