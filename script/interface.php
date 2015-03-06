@@ -185,7 +185,8 @@ function _create(&$db, &$user, $class, $object)
 
 function _update(&$db, &$user, $class, $object)
 {
-	$localObject = new $class($db);
+	$localObject = clone $object;
+	$localObject->__construct($db);
 	
 	if ($localObject->fetch($object->id))
 	{
