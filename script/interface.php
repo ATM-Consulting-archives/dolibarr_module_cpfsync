@@ -5,6 +5,8 @@ set_time_limit(0);
 require('../config.php');
 require('../class/cpfsync.class.php');
 
+
+//A retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
 ini_set('display_errors',1);
 error_reporting(E_ALL);
 
