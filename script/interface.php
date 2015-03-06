@@ -161,7 +161,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		{
 			_delete($db, $class, $object);
 		}
-		elseif (in_array($doli_action, SyncEvent::$TActionValidation))
+		elseif (in_array($doli_action, SyncEvent::$TActionValidate))
 		{
 			$exist = _isExistingObject($db, strtolower($class), (int) $object->id);
 			
