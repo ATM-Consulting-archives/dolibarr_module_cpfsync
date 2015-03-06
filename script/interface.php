@@ -106,20 +106,19 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-	print $res;
-	/*
-	if ($res) return _deleteCurrentEvent($ATMdb, $data);
-	else return "Traitement des données impossible";*/
+	
+	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
+	else return 'Traitement des données impossible';
 }
 
 function _deleteCurrentEvent(&$ATMdb, $data)
 {
-	/*foreach ($data as $row)
+	foreach ($data as $row)
 	{
 		$syncEvent = new SyncEvent;
 		$syncEvent->load($ATMdb, $row['rowid']);
 		$syncEvent->delete($ATMdb);
-	}*/
+	}
 
 	return 1;
 }
