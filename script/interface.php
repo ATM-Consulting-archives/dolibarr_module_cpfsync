@@ -105,7 +105,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-	print $res;
+	
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -179,7 +179,7 @@ function _create(&$db, &$user, $class, $object)
 	$localObject = clone $object;
 	$localObject->id = 0;
 	$localObject->__construct($db); //Permet de re-définir $localObject->db qui est un attribut protected
-	var_dump($localObject);
+	
 	$localObject->create($user);
 }
 
