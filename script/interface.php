@@ -131,6 +131,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	dol_include_once('/societe/class/client.class.php');
 	dol_include_once('/product/class/product.class.php');
 	dol_include_once('/compta/facture/class/facture.class.php');
+	dol_include_once('/compta/paiement/class/paiement.class.php');
 	dol_include_once('/core/lib/price.lib.php');
 	
 	//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
@@ -140,6 +141,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	
 	$user = new User($db);
 	$user->fetch($id_user);
+	$user->getrights();
 	//^ vérifier les droits du user
 	
 	$data = __get('data', array());
@@ -189,10 +191,16 @@ function _create(&$db, &$user, $class, $object)
 	
 	if ($class == 'Facture')
 	{
+		$localObject->facnumber = $localObject->getNextNumRef($localObject->client);
 		_initDbFacture($db, $localObject);
 	}
 	
 	$localObject->create($user);
+	
+	if ($class = 'Facture')
+	{
+		$localObject->validate($user);
+	}
 }
 
 function _update(&$db, &$user, $class, $object, $doli_action)
@@ -285,7 +293,7 @@ function _updateLines(&$db, &$localObject, $oldLines)
 		$localObject->addline($newline->desc, $newline->subprice, $newline->qty, $newline->tva_tx, $newline->localtax1_tx, $newline->localtax2_tx, $newline->fk_product, $newline->remise_percent, $newline->date_start, $newline->date_end, $newline->fk_code_ventilation, $newline->info_bits, $newline->fk_remise_except, ($newline->total_tva > 0 || !$newline->fk_product ? 'HT' : 'TTC'), ($newline->subprice * (1 + ($newline->tva_tx / 100))), $newline->product_type, $newline->rang, $newline->special_code, $newline->origin, $newline->origin_id, $newline->fk_parent_line, $newline->fk_fournprice, $newline->pa_ht, $newline->label, $newline->array_options);
 	}
 	
-	$localObject->brouillon = 0;	
+	$localObject->brouillon = 0;
 }
 
 /*
