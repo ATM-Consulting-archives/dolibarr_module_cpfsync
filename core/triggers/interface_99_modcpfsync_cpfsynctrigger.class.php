@@ -127,7 +127,7 @@ class Interfacecpfsynctrigger
         }
 		
 		// Products
-		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'PRODUCT_CREATE' || $action == 'PRODUCT_MODIFY' || $action == 'PRODUCT_DELETE')) 
+		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'PRODUCT_CREATE' || $action == 'PRODUCT_MODIFY' || $action == 'PRODUCT_DELETE' || $action == 'PRODUCT_PRICE_MODIFY')) 
 		{
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 			$type_object = 'Product';

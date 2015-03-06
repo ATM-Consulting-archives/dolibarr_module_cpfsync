@@ -180,21 +180,26 @@ function _create(&$db, &$user, $class, $object)
 {	
 	$localObject = clone $object;
 	$localObject->id = 0;
-	$localObject->__construct($db); //Permet de re-définir $localObject->db qui est un attribut protected
+	
+	//Closure PHP c'est magique => http://www.thedarksideofthewebblog.com/les-closure-en-php/
+	$initDb = function(&$db) { $this->db = &$db; };
+	$initDb = Closure::bind($initDb , $localObject, $class);
+	$initDb($db);
 	
 	$localObject->create($user);
 }
 
 function _update(&$db, &$user, $class, $object)
 {
-	/*$localObject = clone $object;
-	$localObject->__construct($db);*/
 	$localObject = new $class($db);
 	
 	if ($localObject->fetch($object->id))
 	{
-		$localObject = $object;
-		$localObject->__construct($db);
+		$localObject = clone $object;
+		
+		$initDb = function(&$db) { $this->db = &$db; };
+		$initDb = Closure::bind($initDb , $localObject, $class);
+		$initDb($db);
 		
 		switch ($class) {
 			case 'Societe':
@@ -210,7 +215,7 @@ function _update(&$db, &$user, $class, $object)
 	}
 	else 
 	{
-		_create($db, $class, $object);
+		_create($db, $user, $class, $object);
 	}
 }
 
