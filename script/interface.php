@@ -105,7 +105,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-	
+	print $res;
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -177,8 +177,9 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 function _create(&$db, &$user, $class, $object)
 {	
 	$localObject = clone $object;
+	$localObject->id = 0;
 	$localObject->__construct($db); //Permet de re-définir $localObject->db qui est un attribut protected
-	
+	var_dump($localObject);
 	$localObject->create($user);
 }
 
@@ -193,9 +194,9 @@ function _update(&$db, &$user, $class, $object)
 		$localObject = $object;
 		$localObject->__construct($db);
 		
-		switch (strtolower($class)) {
-			case 'societe':
-			case 'product':
+		switch ($class) {
+			case 'Societe':
+			case 'Product':
 				$localObject->update($localObject->id, $user);
 				break;
 			
@@ -216,8 +217,8 @@ function _delete(&$db, $class, $object)
 	$localObject = new $class($db);
 	$localObject->fetch($object->id);
 	
-	switch (strtolower($class)) {
-		case 'societe':
+	switch ($class) {
+		case 'Societe':
 			$localObject->delete($localObject->id);
 			break;
 		
