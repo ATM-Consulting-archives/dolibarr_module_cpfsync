@@ -108,7 +108,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-
+//print $res;
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -135,6 +135,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/product/class/product.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/compta/paiement/class/paiement.class.php');
+		dol_include_once('/compta/bank/class/account.class.php');
 		dol_include_once('/core/lib/price.lib.php');
 		
 		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
@@ -157,15 +158,15 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
-				_create($db, $user, $class, $object);			
+				_create($db, $user, $class, $object, $row['facnumber']);			
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionModify))
 			{
-				_update($db, $user, $class, $object, $doli_action, $row['facnumber']);
+				_update($db, $user, $class, $object, $doli_action);
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionDelete))
 			{
-				_delete($db, $class, $object);
+				_delete($db, $class, $object, $row['facnumber']);
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionValidate))
 			{
@@ -185,7 +186,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	return 'ok';
 }
 
-function _create(&$db, &$user, $class, $object)
+function _create(&$db, &$user, $class, $object, $facnumber = '')
 {	
 	$localObject = clone $object;
 	$localObject->id = 0;
@@ -199,6 +200,23 @@ function _create(&$db, &$user, $class, $object)
 	{
 		$localObject->facnumber = $localObject->getNextNumRef($localObject->client);
 		_initDbFacture($db, $localObject);
+		
+		//Récupération du bon client en distant
+		_fetch($db, $localObject->client, $localObject->client, 'Societe');
+		$localObject->socid = $localObject->client->id;
+		
+		//TODO récupérer les produits sur leurs ref et non sur l'id
+	}
+	elseif ($class == 'Paiement')
+	{
+		$facture = new Facture($db);
+		$facture->fetch(null, $facnumber);
+		//Merci dolibarr de mettre le facid dans l'indice du tableau de amount plutôt que dans l'objet Paiement
+		foreach ($localObject->amounts as $key => $amount) 
+		{
+			$localObject->amounts[$facture->id] = $amount;
+			unset($localObject->amounts[$key]);
+		}
 	}
 	
 	$localObject->create($user);
@@ -210,11 +228,11 @@ function _create(&$db, &$user, $class, $object)
 	}
 }
 
-function _update(&$db, &$user, $class, $object, $doli_action, $facnumber = '')
+function _update(&$db, &$user, $class, $object, $doli_action)
 {
 	$localObject = new $class($db);
 	
-	if (_fetch($db, $localObject, $object, $class, $facnumber))
+	if (_fetch($db, $localObject, $object, $class))
 	{
 		if ($class == 'Facture')
 		{
@@ -257,16 +275,16 @@ function _update(&$db, &$user, $class, $object, $doli_action, $facnumber = '')
 	}
 }
 
-function _delete(&$db, $class, $object)
+function _delete(&$db, $class, $object, $facnumber)
 {
 	$localObject = new $class($db);
-	$localObject->fetch($object->id);
+	_fetch($db, $localObject, $object, $class, $facnumber);
 	
 	switch ($class) {
 		case 'Societe':
 			$localObject->delete($localObject->id);
 			break;
-		
+			
 		default:
 			$localObject->delete();
 			break;
@@ -280,7 +298,7 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 	{
 		case 'Societe':
 			//Recherche sur code_client ou si non renseigné code_fournisseur
-			$sql.= 'societe WHERE ';
+			$sql.= 'societe pr WHERE ';
 			
 			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
 			elseif ($object->code_client) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
@@ -301,10 +319,13 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 			break;
 			
 		case 'Paiement':
-			//Ligne de facture
-			$facture = new Facture($db);
-			$facture->fetch(null, $facnumber);
-			
+			//Recherche de la ligne de paiement, impossible de ce référer à la référence facture
+			$sql.= 'paiement';
+			$sql.= ' WHERE datep = "'.$db->escape(date('Y-m-d H:i:s', $object->datepaye)).'"';
+			$sql.= ' AND amount = '.(double) $object->amount;
+			$sql.= ' AND num_paiement = "'.$db->escape($object->num_paiement).'"';
+			$sql.= ' AND fk_bank = '.(int) $object->bank_line;
+				
 			break;
 			
 		default:
