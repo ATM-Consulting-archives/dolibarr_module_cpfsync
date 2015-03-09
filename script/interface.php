@@ -76,7 +76,7 @@ function _sendData(&$ATMdb, $conf)
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
 	
-	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event';
+	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid';
 	$ATMdb->Execute($sql);
 	
 	while ($ATMdb->Get_line())
@@ -127,6 +127,8 @@ function _deleteCurrentEvent(&$ATMdb, $data)
 
 function _refreshData(&$ATMdb, &$conf, &$db)
 {
+	global $user;
+	
 	try 
 	{
 		dol_include_once('/core/lib/admin.lib.php');
@@ -249,9 +251,11 @@ function _update(&$db, &$user, $class, $object, $doli_action)
 			$oldLines = $localObject->lines;	
 		}
 		
-		$oldId = $localObject->id;
+		$object->id = $localObject->id;
+		
+		if (isset($localObject->socid)) $object->socid = $localObject->socid;
+		
 		$localObject = clone $object;
-		$localObject->id = $oldId;
 		
 		$initDb = function(&$db) { $this->db = &$db; };
 		$initDb = Closure::bind($initDb , $localObject, $class);
