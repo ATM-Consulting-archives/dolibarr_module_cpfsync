@@ -11,4 +11,4 @@ cpfsyncDescCustomer=Enable synchronization of customers
 cpfsyncDescProduct=Enable synchronization of products
 cpfsyncDescInvoice=Enable synchronization of invoices
 cpfsyncDescUrlDistant=Please enter the URL of the remote htdocs
-cpfsyncDescUser=Choice default user will be used in update script
+cpfsyncDescUser=Choice default user will be used in update script (must be admin)

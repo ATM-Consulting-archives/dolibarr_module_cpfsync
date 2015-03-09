@@ -11,4 +11,4 @@ cpfsyncDescCustomer=Permet d'activer la synchronisation des clients
 cpfsyncDescProduct=Permet d'activer la synchronisation des produits
 cpfsyncDescInvoice=Permet d'activer la synchronisation des factures clients
 cpfsyncDescUrlDistant=Veuillez renseigner l'url du htdocs distant
-cpfsyncDescUser=Permet de définir l'utilisateur pour le script de mise à jour
+cpfsyncDescUser=Permet de définir l'utilisateur pour le script de mise à jour (doit être administrateur)

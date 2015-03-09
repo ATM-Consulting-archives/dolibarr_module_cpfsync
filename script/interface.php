@@ -58,10 +58,16 @@ function _askPing($url = null)
 	
 	$url .= '/custom/cpfsync/script/interface.php?action=ping';
 	
+	$data['action'] = 'ping';
+	$data_build  = http_build_query($data);
+	
 	$context = stream_context_create(array(
 		'http' => array(
-		    'method' => 'GET',
-		    'timeout' => 10, //Si je n'ai pas de réponse dans les 10sec ma requête http s'arrête
+		    'method' => 'POST'
+		    ,'content' => $data_build
+		    ,'timeout' => 10 //Si je n'ai pas de réponse dans les 10sec ma requête http s'arrête
+		    ,'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+                . "Content-Length: " . strlen($data_build) . "\r\n",
 		)
 	));
 	
@@ -70,8 +76,8 @@ function _askPing($url = null)
 }
 
 function _sendData(&$ATMdb, $conf)
-{
-	if (_askPing() != "ok") return 'ko';
+{	
+	if (!$conf->cpfsync->enabled || _askPing() != "ok") return 'ko';
 	
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
@@ -99,16 +105,16 @@ function _sendData(&$ATMdb, $conf)
 
 	$context = stream_context_create(array(
 		'http' => array(
-		    'method' => 'POST',
-		    'content' => $data_build,
-		    'timeout' => 40, //Si je n'ai pas de réponse dans les 40sec ma requête http s'arrête
-		    'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+		    'method' => 'POST'
+		    ,'content' => $data_build
+		    ,'timeout' => 40 //Si je n'ai pas de réponse dans les 40sec ma requête http s'arrête
+		    ,'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
                 . "Content-Length: " . strlen($data_build) . "\r\n",
 		)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+//print $res;	
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -147,7 +153,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		$user = new User($db);
 		$user->fetch($id_user);
-		$user->getrights();
+		if (!$user->admin) return 'ko';
+		$user->getrights(); //Load des droits
 		//^ vérifier les droits du user
 		
 		$data = __get('data', array());
