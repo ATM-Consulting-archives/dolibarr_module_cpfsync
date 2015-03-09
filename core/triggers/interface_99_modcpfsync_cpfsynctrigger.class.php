@@ -111,6 +111,8 @@ class Interfacecpfsynctrigger
      */
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
+    	global $db;
+		
     	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
 		
     	if (!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
@@ -118,6 +120,7 @@ class Interfacecpfsynctrigger
 		dol_include_once('/cpfsync/class/cpfsync.class.php');
 		
 		$type_object = false;
+		$facnumber = '';
 		
 		// Companies / Customers
         if (!empty($conf->global->CPFSYNC_SHARE_CUSTOMER) && ($action == 'COMPANY_CREATE' || $action == 'COMPANY_MODIFY' || $action == 'COMPANY_DELETE')) 
@@ -145,6 +148,10 @@ class Interfacecpfsynctrigger
         {
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 			$type_object = 'Paiement';
+			
+			$facture = new Facture($db);
+			$facture->fetch(GETPOST('facid'));
+			$facnumber = $facture->ref; // ref == facnumber
         }
 		
 		if ($type_object)
@@ -155,6 +162,7 @@ class Interfacecpfsynctrigger
 			$event->object = serialize($object);
 			$event->type_object = $type_object;
 			$event->doli_action = $action;
+			$event->facnumber = $facnumber;
 			
 			$event->save($PDOdb);
 		}

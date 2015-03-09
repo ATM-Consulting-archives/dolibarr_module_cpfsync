@@ -21,7 +21,7 @@ class SyncEvent extends TObjetStd
 		
 		$this->TChamps = array();
 		$this->add_champs('object', 'type=text;');
-		$this->add_champs('type_object,doli_action', 'type=chaine;');
+		$this->add_champs('type_object,doli_action,facnumber', 'type=chaine;'); //facnumber utile dans le cas d'un paiement, permet de faire la liaison avec la facture distante pcq l'object paiement converse qu'un id facture et non sa référence
 		
 		$this->start();
 	}

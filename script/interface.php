@@ -86,6 +86,7 @@ function _sendData(&$ATMdb, $conf)
 			,'object_serialize' => $ATMdb->Get_field('object')
 			,'type_object' => $ATMdb->Get_field('type_object')
 			,'doli_action' => $ATMdb->Get_field('doli_action')
+			,'facnumber' => $ATMdb->Get_field('facnumber')
 		);
 	}
 
@@ -107,7 +108,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-	
+
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -125,57 +126,62 @@ function _deleteCurrentEvent(&$ATMdb, $data)
 }
 
 function _refreshData(&$ATMdb, &$conf, &$db)
-{	
-	dol_include_once('/core/lib/admin.lib.php');
-	dol_include_once('/user/class/user.class.php');
-	dol_include_once('/societe/class/client.class.php');
-	dol_include_once('/product/class/product.class.php');
-	dol_include_once('/compta/facture/class/facture.class.php');
-	dol_include_once('/compta/paiement/class/paiement.class.php');
-	dol_include_once('/core/lib/price.lib.php');
-	
-	//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
-	dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
-
-	if (!($id_user = (int) $conf->global->CPFSYNC_ID_USER) || $id_user <= 0) return 'ko';
-	
-	$user = new User($db);
-	$user->fetch($id_user);
-	$user->getrights();
-	//^ vérifier les droits du user
-	
-	$data = __get('data', array());
-	
-	foreach ($data as $row)
+{
+	try 
 	{
-		$object = unserialize($row['object_serialize']);
-		$class = $row['type_object'];
-		$doli_action = $row['doli_action'];
+		dol_include_once('/core/lib/admin.lib.php');
+		dol_include_once('/user/class/user.class.php');
+		dol_include_once('/societe/class/client.class.php');
+		dol_include_once('/product/class/product.class.php');
+		dol_include_once('/compta/facture/class/facture.class.php');
+		dol_include_once('/compta/paiement/class/paiement.class.php');
+		dol_include_once('/core/lib/price.lib.php');
 		
-		if (in_array($doli_action, SyncEvent::$TActionCreate))
+		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
+		dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
+	
+		if (!($id_user = (int) $conf->global->CPFSYNC_ID_USER) || $id_user <= 0) return 'ko';
+		
+		$user = new User($db);
+		$user->fetch($id_user);
+		$user->getrights();
+		//^ vérifier les droits du user
+		
+		$data = __get('data', array());
+		
+		foreach ($data as $row)
 		{
-			_create($db, $user, $class, $object);			
-		}
-		elseif (in_array($doli_action, SyncEvent::$TActionModify))
-		{
-			_update($db, $user, $class, $object, $doli_action);
-		}
-		elseif (in_array($doli_action, SyncEvent::$TActionDelete))
-		{
-			_delete($db, $class, $object);
-		}
-		elseif (in_array($doli_action, SyncEvent::$TActionValidate))
-		{
-			$exist = _isExistingObject($db, strtolower($class), (int) $object->id);
+			$object = unserialize($row['object_serialize']);
+			$class = $row['type_object'];
+			$doli_action = $row['doli_action'];
 			
-			if ($exist) _update($db, $user, $class, $object, $doli_action);
-			else _create($db, $user, $class, $object);
-		}	
-		
+			if (in_array($doli_action, SyncEvent::$TActionCreate))
+			{
+				_create($db, $user, $class, $object);			
+			}
+			elseif (in_array($doli_action, SyncEvent::$TActionModify))
+			{
+				_update($db, $user, $class, $object, $doli_action, $row['facnumber']);
+			}
+			elseif (in_array($doli_action, SyncEvent::$TActionDelete))
+			{
+				_delete($db, $class, $object);
+			}
+			elseif (in_array($doli_action, SyncEvent::$TActionValidate))
+			{
+				$exist = _isExistingObject($db, strtolower($class), (int) $object->id);
+				
+				if ($exist) _update($db, $user, $class, $object, $doli_action);
+				else _create($db, $user, $class, $object);
+			}	
+			
+		}
 	}
-	
-	dolibarr_set_const($db, 'CPFSYNC_LOCK', '');
-	
+	finally
+	{
+		dolibarr_set_const($db, 'CPFSYNC_LOCK', '');
+	}
+		
 	return 'ok';
 }
 
@@ -197,24 +203,27 @@ function _create(&$db, &$user, $class, $object)
 	
 	$localObject->create($user);
 	
-	if ($class = 'Facture')
+	if ($class == 'Facture')
 	{
-		$localObject->validate($user);
+		//Permet de générer la référence
+		$localObject->validate($user, $pbject->facnumber);
 	}
 }
 
-function _update(&$db, &$user, $class, $object, $doli_action)
+function _update(&$db, &$user, $class, $object, $doli_action, $facnumber = '')
 {
 	$localObject = new $class($db);
 	
-	if ($localObject->fetch($object->id))
+	if (_fetch($db, $localObject, $object, $class, $facnumber))
 	{
 		if ($class == 'Facture')
 		{
 			$oldLines = $localObject->lines;	
 		}
 		
+		$oldId = $localObject->id;
 		$localObject = clone $object;
+		$localObject->id = $oldId;
 		
 		$initDb = function(&$db) { $this->db = &$db; };
 		$initDb = Closure::bind($initDb , $localObject, $class);
@@ -262,6 +271,55 @@ function _delete(&$db, $class, $object)
 			$localObject->delete();
 			break;
 	}
+}
+
+function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
+{
+	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX;
+	switch ($class) 
+	{
+		case 'Societe':
+			//Recherche sur code_client ou si non renseigné code_fournisseur
+			$sql.= 'societe WHERE ';
+			
+			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
+			elseif ($object->code_client) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
+			else return false;
+			
+			break;
+		
+		case 'Product':
+			//Recherche sur la ref produit
+			return $localObject->fetch(null, $object->ref);
+			
+			break;
+		
+		case 'Facture':
+			//Recherche sur le facnumber facture
+			return $localObject->fetch(null, $object->facnumber);
+			
+			break;
+			
+		case 'Paiement':
+			//Ligne de facture
+			$facture = new Facture($db);
+			$facture->fetch(null, $facnumber);
+			
+			break;
+			
+		default:
+			return false;
+			break;
+	}
+	
+	$resql = $db->query($sql);
+	if ($db->num_rows($resql))
+	{
+		$obj = $db->fetch_object($resql);
+		return $localObject->fetch($obj->rowid);	
+	}
+	
+	return false;
 }
 
 function _initDbFacture(&$db, &$localObject)
