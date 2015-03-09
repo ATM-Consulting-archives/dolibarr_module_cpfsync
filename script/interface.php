@@ -7,7 +7,7 @@ require('../class/cpfsync.class.php');
 
 
 //A retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
-ini_set('display_errors',1);
+ini_set('display_errors',0);
 error_reporting(E_ALL);
 
 $ATMdb=new TPDOdb;
@@ -170,7 +170,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionValidate))
 			{
-				$exist = _isExistingObject($db, strtolower($class), (int) $object->id);
+				$exist = _isExistingObject($db, strtolower($class), $object);
 				
 				if ($exist) _update($db, $user, $class, $object, $doli_action);
 				else _create($db, $user, $class, $object);
@@ -198,14 +198,24 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 	
 	if ($class == 'Facture')
 	{
-		$localObject->facnumber = $localObject->getNextNumRef($localObject->client);
+		//$localObject->facnumber = $localObject->getNextNumRef($localObject->client);
 		_initDbFacture($db, $localObject);
-		
+
 		//Récupération du bon client en distant
 		_fetch($db, $localObject->client, $localObject->client, 'Societe');
 		$localObject->socid = $localObject->client->id;
 		
-		//TODO récupérer les produits sur leurs ref et non sur l'id
+		//Récupère l'id des produits qui correspond aux référence pour garder le/les bons produits dans la facture
+		foreach ($localObject->lines as &$facLine)
+		{
+			if ($facLine->product_ref)
+			{
+				$product = new Product($db);
+				$product->fetch(null, $facLine->product_ref);
+				$facLine->fk_product = $product->id;
+			}
+		}
+		
 	}
 	elseif ($class == 'Paiement')
 	{
@@ -224,14 +234,14 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 	if ($class == 'Facture')
 	{
 		//Permet de générer la référence
-		$localObject->validate($user, $pbject->facnumber);
+		$localObject->validate($user, $object->facnumber);
 	}
 }
 
 function _update(&$db, &$user, $class, $object, $doli_action)
 {
 	$localObject = new $class($db);
-	
+
 	if (_fetch($db, $localObject, $object, $class))
 	{
 		if ($class == 'Facture')
@@ -314,7 +324,7 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 		
 		case 'Facture':
 			//Recherche sur le facnumber facture
-			return $localObject->fetch(null, $object->facnumber);
+			return $localObject->fetch(null, $object->ref);
 			
 			break;
 			
@@ -369,7 +379,14 @@ function _updateLines(&$db, &$localObject, $oldLines)
 	
 	foreach ($localObject->lines as $newline)
 	{
-		$localObject->addline($newline->desc, $newline->subprice, $newline->qty, $newline->tva_tx, $newline->localtax1_tx, $newline->localtax2_tx, $newline->fk_product, $newline->remise_percent, $newline->date_start, $newline->date_end, $newline->fk_code_ventilation, $newline->info_bits, $newline->fk_remise_except, ($newline->total_tva > 0 || !$newline->fk_product ? 'HT' : 'TTC'), ($newline->subprice * (1 + ($newline->tva_tx / 100))), $newline->product_type, $newline->rang, $newline->special_code, $newline->origin, $newline->origin_id, $newline->fk_parent_line, $newline->fk_fournprice, $newline->pa_ht, $newline->label, $newline->array_options);
+		$fk_product = 0;
+		if ($newline->product_ref)
+		{
+			$product = new Product($db);
+			$product->fetch(null, $newline->product_ref);
+			$fk_product = $product->id;
+		}
+		$localObject->addline($newline->desc, $newline->subprice, $newline->qty, $newline->tva_tx, $newline->localtax1_tx, $newline->localtax2_tx, $fk_product, $newline->remise_percent, $newline->date_start, $newline->date_end, $newline->fk_code_ventilation, $newline->info_bits, $newline->fk_remise_except, ($newline->total_tva > 0 || !$newline->fk_product ? 'HT' : 'TTC'), ($newline->subprice * (1 + ($newline->tva_tx / 100))), $newline->product_type, $newline->rang, $newline->special_code, $newline->origin, $newline->origin_id, $newline->fk_parent_line, $newline->fk_fournprice, $newline->pa_ht, $newline->label, $newline->array_options);
 	}
 	
 	$localObject->brouillon = 0;
@@ -379,11 +396,14 @@ function _updateLines(&$db, &$localObject, $oldLines)
  * Fonction custom qui reprend la fonction de la class Commonobject
  * check uniquement sur un id et ne fait pas de select ref qui n'existe pas dans la table llx_societe par exemple
  */
-function _isExistingObject($db, $element, $id)
+function _isExistingObject(&$db, $element, $object)
 {
+	$champ = "facnumber";
+	$ref = $object->ref;
+	
 	$sql = 'SELECT rowid';
 	$sql.= ' FROM '.MAIN_DB_PREFIX.$element;
-	if ($id > 0) $sql.= ' WHERE rowid = '.$db->escape($id);
+	if (!empty($ref)) $sql.= ' WHERE '.$champ.' = "'.$db->escape($ref).'"';
 	else {
 		return -1;
 	}
