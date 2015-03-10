@@ -3,7 +3,7 @@
 class SyncEvent extends TObjetStd
 {
 	// Tableau d'action pour savoir si l'action doit créer une nouvelle entrée sur le dolibarr distant
-	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'MOVEMENT_STOCK'); 
+	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'STOCK_MOVEMENT'); 
 	
 	// Tableau d'action pour savoir si l'action doit modifier une entrée sur le dolibarr distant
 	public static $TActionModify = array('COMPANY_MODIFY', 'PRODUCT_MODIFY', 'PRODUCT_PRICE_MODIFY');

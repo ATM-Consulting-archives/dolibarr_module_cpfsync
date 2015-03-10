@@ -158,7 +158,7 @@ class Interfacecpfsynctrigger
 		elseif (!empty($conf->global->CPFSYNC_SHARE_STOCK) && $action == 'STOCK_MOVEMENT')
 		{
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". entrepot_id=" . $object->entrepot_id);
-			$type_object = 'MovementStock';
+			$type_object = 'MouvementStock';
 			
 			$product = new Product($db);
 			$product->fetch($object->product_id);
