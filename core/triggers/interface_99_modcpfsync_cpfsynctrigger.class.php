@@ -180,7 +180,6 @@ class Interfacecpfsynctrigger
 			
 		}
 		
-		
 		if ($type_object)
 		{
 			$PDOdb = new TPDOdb;
