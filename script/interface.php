@@ -7,8 +7,8 @@ require('../class/cpfsync.class.php');
 
 
 //En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
-//ini_set('display_errors',1);
-//error_reporting(E_ALL);
+ini_set('display_errors',1);
+error_reporting(E_ALL);
 
 $ATMdb=new TPDOdb;
 $action = __get('action', 0);
@@ -114,7 +114,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;	
+print $res;	
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -238,7 +238,18 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 		}
 	}
 	
-	$localObject->create($user);
+	//La Class MouvementStock a sa propre fonction create
+	if ($class == 'MouvementStock')
+	{
+		$product = new Product($db);
+		$product->fetch(null, $localObject->product_ref);
+		
+		$localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
+	}
+	else 
+	{
+		$localObject->create($user);
+	}
 	
 	if ($class == 'Facture')
 	{

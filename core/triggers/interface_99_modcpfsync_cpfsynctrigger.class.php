@@ -154,6 +154,21 @@ class Interfacecpfsynctrigger
 			$facnumber = $facture->ref; // ref == facnumber
         }
 		
+		// Movement stock
+		elseif (!empty($conf->global->CPFSYNC_SHARE_STOCK) && $action == 'STOCK_MOVEMENT')
+		{
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". entrepot_id=" . $object->entrepot_id);
+			$type_object = 'MovementStock';
+			
+			$product = new Product($db);
+			$product->fetch($object->product_id);
+			$object->product_ref = $product->ref;
+			$object->type = GETPOST('mouvement'); //type du mouvement
+			$object->price = GETPOST('price');
+			$object->label = GETPOST('label');
+		}
+		
+		
 		if ($type_object)
 		{
 			$PDOdb = new TPDOdb;
