@@ -92,6 +92,7 @@ function _sendData(&$ATMdb, $conf)
 			,'type_object' => $ATMdb->Get_field('type_object')
 			,'doli_action' => $ATMdb->Get_field('doli_action')
 			,'facnumber' => $ATMdb->Get_field('facnumber')
+			,'entity' => $ATMdb->Get_field('entity')
 		);
 	}
 
@@ -165,8 +166,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			$class = $row['type_object'];
 			$doli_action = $row['doli_action'];
 			
-			$conf->entity = $row['entity'];
-			
+			$conf->entity = (int) $row['entity'];
+	
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
 				_create($db, $user, $class, $object, $row['facnumber']);			
