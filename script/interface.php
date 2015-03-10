@@ -17,7 +17,6 @@ traite_get($ATMdb, $action);
 
 function traite_get(&$ATMdb, $action) 
 {
-	
 	global $db,$conf;
 
 	switch ($action) 
@@ -76,7 +75,7 @@ function _askPing($url = null)
 }
 
 function _sendData(&$ATMdb, $conf)
-{	
+{
 	if (!$conf->cpfsync->enabled || _askPing() != "ok") return 'ko';
 	
 	//Formatage du tableau pour la réception en POST
@@ -114,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;	
+//print $res;	
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -134,7 +133,7 @@ function _deleteCurrentEvent(&$ATMdb, $data)
 function _refreshData(&$ATMdb, &$conf, &$db)
 {
 	global $user;
-	
+
 	try 
 	{
 		dol_include_once('/core/lib/admin.lib.php');
@@ -165,6 +164,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			$object = unserialize($row['object_serialize']);
 			$class = $row['type_object'];
 			$doli_action = $row['doli_action'];
+			
+			$conf->entity = $row['entity'];
 			
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
@@ -197,7 +198,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 }
 
 function _create(&$db, &$user, $class, $object, $facnumber = '')
-{	
+{
 	$localObject = clone $object;
 	$localObject->id = 0;
 	

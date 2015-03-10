@@ -115,9 +115,9 @@ class modcpfsync extends DolibarrModules
 			,1 => array('CPFSYNC_SHARE_PRODUCT', 'chaine', 1, 'Permet d\'activer la synchronisation des produits.', 1)
 			,2 => array('CPFSYNC_SHARE_INVOICE', 'chaine', 1, 'Permet d\'activer la synchronisation des factures.', 1)
 			,3 => array('CPFSYNC_SHARE_STOCK', 'chaine', 1, 'Permet d\'activer la synchronisation des stocks.', 1)
-			,3 => array('CPFSYNC_URL_DISTANT', 'chaine', '', 'URL de l\'entité distant à qui on envoi les données.', 1)
-			,4 => array('CPFSYNC_LOCK', 'chaine', 0, 'Varible qui permet de bloquer les actions du trigger lorsque le script de maj est en route.', 1)
-			,4 => array('CPFSYNC_ID_USER', 'chaine', 1, 'Permet de définir l\'id de l\'utilisateur utilisé par le script (si on renseigné l\'id 1 est forcé).', 1)
+			,4 => array('CPFSYNC_URL_DISTANT', 'chaine', '', 'URL de l\'entité distant à qui on envoi les données.', 1)
+			,5 => array('CPFSYNC_LOCK', 'chaine', 0, 'Varible qui permet de bloquer les actions du trigger lorsque le script de maj est en route.', 1)
+			,6 => array('CPFSYNC_ID_USER', 'chaine', 1, 'Permet de définir l\'id de l\'utilisateur utilisé par le script (si on renseigné l\'id 1 est forcé).', 1)
 		);
 
 		// Array to add new pages in new tabs
