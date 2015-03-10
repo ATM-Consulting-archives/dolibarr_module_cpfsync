@@ -162,10 +162,22 @@ class Interfacecpfsynctrigger
 			
 			$product = new Product($db);
 			$product->fetch($object->product_id);
+			
 			$object->product_ref = $product->ref;
-			$object->type = GETPOST('mouvement'); //type du mouvement
-			$object->price = GETPOST('price');
-			$object->label = GETPOST('label');
+			if (isset($object->origin))
+			{
+				$object->type = (substr($object->qty, 0,1) == '-') ? 2 : 3;
+				$object->price = '';
+				$object->label = '';
+			}
+			else 
+			{
+				$object->type = GETPOST('mouvement'); //type du mouvement
+				$object->price = GETPOST('price');
+				$object->label = GETPOST('label');
+			}
+			
+			
 		}
 		
 		

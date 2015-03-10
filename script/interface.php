@@ -7,8 +7,8 @@ require('../class/cpfsync.class.php');
 
 
 //En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
-ini_set('display_errors',1);
-error_reporting(E_ALL);
+/*ini_set('display_errors',1);
+error_reporting(E_ALL);*/
 
 $ATMdb=new TPDOdb;
 $action = __get('action', 0);
@@ -114,7 +114,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;	
+print $res;	
 	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
 	else return 'Traitement des données impossible';
 }
@@ -141,6 +141,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/user/class/user.class.php');
 		dol_include_once('/societe/class/client.class.php');
 		dol_include_once('/product/class/product.class.php');
+		dol_include_once('/product/stock/class/mouvementstock.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/compta/paiement/class/paiement.class.php');
 		dol_include_once('/compta/bank/class/account.class.php');
@@ -155,7 +156,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		$user->fetch($id_user);
 		if (!$user->admin) return 'ko';
 		$user->getrights(); //Load des droits
-		//^ vérifier les droits du user
+		//^ vérifier les droits du user (Tiers, Produits, ProductBatch)
 		
 		$data = __get('data', array());
 		
