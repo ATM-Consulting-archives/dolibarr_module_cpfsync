@@ -6,9 +6,9 @@ require('../config.php');
 require('../class/cpfsync.class.php');
 
 
-//A retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
-ini_set('display_errors',0);
-error_reporting(E_ALL);
+//En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
+//ini_set('display_errors',1);
+//error_reporting(E_ALL);
 
 $ATMdb=new TPDOdb;
 $action = __get('action', 0);
