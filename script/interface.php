@@ -154,9 +154,9 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		$user = new User($db);
 		$user->fetch($id_user);
-		if (!$user->admin) return 'ko';
+		if (!$user->admin) return 'ko';		
 		$user->getrights(); //Load des droits
-		//^ vérifier les droits du user (Tiers, Produits, ProductBatch)
+		//L'utilisateur doit avoir les droits sur les Sociétés, produits, factures et stock
 		
 		$data = __get('data', array());
 		

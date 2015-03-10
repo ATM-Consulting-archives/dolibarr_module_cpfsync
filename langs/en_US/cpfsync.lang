@@ -12,4 +12,4 @@ cpfsyncDescProduct=Enable synchronization of products
 cpfsyncDescInvoice=Enable synchronization of invoices
 cpfsyncDescStock=Enable synchronization of stocks
 cpfsyncDescUrlDistant=Please enter the URL of the remote htdocs
-cpfsyncDescUser=Choice default user will be used in update script (must be admin)
+cpfsyncDescUser=Choice default user will be used in update script (must be admin and have all rights on Tiers, products, invoices and stock)
