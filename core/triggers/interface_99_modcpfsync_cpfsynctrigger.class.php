@@ -97,6 +97,21 @@ class Interfacecpfsynctrigger
         }
     }
 
+	public function insert_sync_event(&$conf, $object, $type_object, $action, $facnumber='', $entity=1)
+	{
+		$PDOdb = new TPDOdb;
+		$event = new SyncEvent;
+		
+		$event->object = serialize($object);
+		$event->type_object = $type_object;
+		$event->doli_action = $action;
+		$event->facnumber = $facnumber;
+		$event->entity = __val($entity, $conf->entity, 'int', true);
+		
+		$event->save($PDOdb);
+	}
+	
+	
     /**
      * Function called when a Dolibarrr business event is done.
      * All functions "run_trigger" are triggered if file
@@ -125,41 +140,57 @@ class Interfacecpfsynctrigger
 		// Companies / Customers
         if (!empty($conf->global->CPFSYNC_SHARE_CUSTOMER) && ($action == 'COMPANY_CREATE' || $action == 'COMPANY_MODIFY' || $action == 'COMPANY_DELETE')) 
         {
+        	$this->insert_sync_event($conf, $object, 'Societe', $action, '', $object->entity);
+			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
-			$type_object = 'Societe';
         }
 		
 		// Products
 		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'PRODUCT_CREATE' || $action == 'PRODUCT_MODIFY' || $action == 'PRODUCT_DELETE' || $action == 'PRODUCT_PRICE_MODIFY')) 
 		{
+			$this->insert_sync_event($conf, $object, 'Product', $action, '', $object->entity);
+			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
-			$type_object = 'Product';
         } 
+		
+		/*Prévoir la gestion d'ajout / modification / suppression de prix fournisseur
+		 * elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && $action == 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE')
+		{
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			$type_object = 'ProductFournisseur';
+		 	$object->fourn_ref = GETPOST('ref_fourn'); //Référence de la ligne prix
+			
+			$fourn = new Fournisseur($db);
+			$fourn->fetch((int) GETPOST('id_fourn'));
+			
+			$object->code_fournisseur = $fourn->code_fournisseur; //Référence du fournisseur
+		}*/
 		
 		// Bills
 		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE')) 
 		{
+			$this->insert_sync_event($conf, $object, 'Facture', $action, '', $object->entity);
+			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
-			$type_object = 'Facture';
         }
 		
 		 // Payments
         elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'PAYMENT_CUSTOMER_CREATE' || $action == 'PAYMENT_DELETE' || $action == 'PAYMENT_ADD_TO_BANK')) 
         {
-            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
-			$type_object = 'Paiement';
-			
+			//TODO dans le cas d'un PAYMENT_DELETE il faudrait trouver le moyen de récupérer le facid de l'object ($object->facid = null et impossible de faire une requête sql)
+			//$object->getBillsArray() est senssé renvoyer la liste des factures sur lesquels porte le paiement mais retourne array vide
 			$facture = new Facture($db);
 			$facture->fetch(GETPOST('facid'));
 			$facnumber = $facture->ref; // ref == facnumber
+			
+			$this->insert_sync_event($conf, $object, 'Paiement', $action, $facnumber, $object->entity);
+			
+            dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         }
 		
 		// Movement stock
 		elseif (!empty($conf->global->CPFSYNC_SHARE_STOCK) && $action == 'STOCK_MOVEMENT')
-		{
-			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". entrepot_id=" . $object->entrepot_id);
-			$type_object = 'MouvementStock';
-			
+		{			
 			$product = new Product($db);
 			$product->fetch($object->product_id);
 			
@@ -176,22 +207,10 @@ class Interfacecpfsynctrigger
 				$object->price = GETPOST('price');
 				$object->label = GETPOST('label');
 			}
-			
-			
-		}
-		
-		if ($type_object)
-		{
-			$PDOdb = new TPDOdb;
-			$event = new SyncEvent;
-			
-			$event->object = serialize($object);
-			$event->type_object = $type_object;
-			$event->doli_action = $action;
-			$event->facnumber = $facnumber;
-			$event->entity = __val($object->entity, $conf->entity, 'int', true);
-			
-			$event->save($PDOdb);
+					
+			$this->insert_sync_event($conf, $object, 'MouvementStock', $action, '', $object->entity);
+				
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". entrepot_id=" . $object->entrepot_id);
 		}
 		
 		

@@ -5,7 +5,6 @@ set_time_limit(50);
 require('../config.php');
 require('../class/cpfsync.class.php');
 
-
 //En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
 /*ini_set('display_errors',1);
 error_reporting(E_ALL);*/
@@ -81,7 +80,7 @@ function _sendData(&$ATMdb, $conf)
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
 	
-	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 30';
+	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 100';
 	$ATMdb->Execute($sql);
 	
 	while ($ATMdb->Get_line())
@@ -114,21 +113,22 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;	
-	if (json_decode($res) == 'ok') return _deleteCurrentEvent($ATMdb, $data['data']);
-	else return 'Traitement des données impossible';
+	$res = json_decode($res);
+
+	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
+	
+	if ($res->msg == 'ok') return 'Synchronisation sans erreur'; 
+	else return 'Synchronisation partielle';
 }
 
-function _deleteCurrentEvent(&$ATMdb, $data)
+function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent)
 {
-	foreach ($data as $row)
+	foreach ($TIdSyncEvent as $id_sync_event)
 	{
 		$syncEvent = new SyncEvent;
-		$syncEvent->load($ATMdb, $row['rowid']);
+		$syncEvent->load($ATMdb, $id_sync_event);
 		$syncEvent->delete($ATMdb);
 	}
-
-	return 1;
 }
 
 function _refreshData(&$ATMdb, &$conf, &$db)
@@ -159,6 +159,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		//L'utilisateur doit avoir les droits sur les Sociétés, produits, factures et stock
 		
 		$data = __get('data', array());
+		$res_id = array(); //Tableau contenant les rowid de la table llx_sync_event
 		
 		foreach ($data as $row)
 		{
@@ -170,22 +171,28 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
-				_create($db, $user, $class, $object, $row['facnumber']);			
+				if (_create($db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionModify))
 			{
-				_update($db, $user, $class, $object, $doli_action);
+				if (_update($db, $conf, $user, $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionDelete))
 			{
-				_delete($db, $class, $object, $row['facnumber']);
+				if (_delete($db, $conf, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionValidate))
 			{
 				$exist = _isExistingObject($db, strtolower($class), $object);
 				
-				if ($exist) _update($db, $user, $class, $object, $doli_action);
-				else _create($db, $user, $class, $object);
+				if ($exist) 
+				{
+					if (_update($db, $conf, $user, $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
+				}
+				else
+				{
+					if (_create($db, $conf, $user, $class, $object) > 0) $res_id[] = $row['rowid'];					
+				}
 			}	
 			
 		}
@@ -194,11 +201,12 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	{
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', '');
 	}
-		
-	return 'ok';
+	
+	
+	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
 }
 
-function _create(&$db, &$user, $class, $object, $facnumber = '')
+function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
 {
 	$localObject = clone $object;
 	$localObject->id = 0;
@@ -214,7 +222,7 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 		_initDbFacture($db, $localObject);
 
 		//Récupération du bon client en distant
-		_fetch($db, $localObject->client, $localObject->client, 'Societe');
+		if (_fetch($db, $conf, $localObject->client, $localObject->client, 'Societe') <= 0) return -1;
 		$localObject->socid = $localObject->client->id;
 		
 		//Récupère l'id des produits qui correspond aux référence pour garder le/les bons produits dans la facture
@@ -236,8 +244,8 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 		//Merci dolibarr de mettre le facid dans l'indice du tableau de amount plutôt que dans l'objet Paiement
 		foreach ($localObject->amounts as $key => $amount) 
 		{
-			$localObject->amounts[$facture->id] = $amount;
 			unset($localObject->amounts[$key]);
+			$localObject->amounts[$facture->id] = $amount;
 		}
 	}
 	
@@ -247,25 +255,27 @@ function _create(&$db, &$user, $class, $object, $facnumber = '')
 		$product = new Product($db);
 		$product->fetch(null, $localObject->product_ref);
 		
-		$localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
+		$res = $localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
 	}
 	else 
 	{
-		$localObject->create($user);
+		$res = $localObject->create($user);
 	}
 	
-	if ($class == 'Facture')
+	if ($class == 'Facture' && $res)
 	{
 		//Permet de générer la référence
-		$localObject->validate($user, $object->facnumber);
+		$res = $localObject->validate($user, $object->facnumber);
 	}
+	
+	return $res;
 }
 
-function _update(&$db, &$user, $class, $object, $doli_action)
+function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 {
 	$localObject = new $class($db);
 
-	if (_fetch($db, $localObject, $object, $class))
+	if (_fetch($db, $conf, $localObject, $object, $class) > 0)
 	{
 		if ($class == 'Facture')
 		{
@@ -290,43 +300,43 @@ function _update(&$db, &$user, $class, $object, $doli_action)
 		
 		switch ($class) {
 			case 'Societe':
-				$localObject->update($localObject->id, $user);
+				return $localObject->update($localObject->id, $user);
 				break;
 				
 			case 'Product':
-				if ($doli_action == 'PRODUCT_PRICE_MODIFY') $localObject->updatePrice($localObject->price, $localObject->price_base_type, $user, $localObject->tva_tx, $localObject->price_min);
-				else $localObject->update($localObject->id, $user);
+				if ($doli_action == 'PRODUCT_PRICE_MODIFY') return $localObject->updatePrice($localObject->price, $localObject->price_base_type, $user, $localObject->tva_tx, $localObject->price_min);
+				else return $localObject->update($localObject->id, $user);
 				break;
 			
 			default:
-				$localObject->update($user);
+				return $localObject->update($user);
 				break;
 		}
 		
 	}
 	else 
 	{
-		_create($db, $user, $class, $object);
+		return _create($db, $conf, $user, $class, $object);
 	}
 }
 
-function _delete(&$db, $class, $object, $facnumber)
+function _delete(&$db, &$conf, $class, $object, $facnumber)
 {
 	$localObject = new $class($db);
-	_fetch($db, $localObject, $object, $class, $facnumber);
+	if (_fetch($db, $conf, $localObject, $object, $class, $facnumber) <= 0) return -1;
 	
 	switch ($class) {
 		case 'Societe':
-			$localObject->delete($localObject->id);
+			return $localObject->delete($localObject->id);
 			break;
 			
 		default:
-			$localObject->delete();
+			return $localObject->delete();
 			break;
 	}
 }
 
-function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
+function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
 {
 	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX;
 	switch ($class) 
@@ -337,7 +347,7 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 			
 			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
 			elseif ($object->code_client) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
-			else return false;
+			else return -1;
 			
 			break;
 		
@@ -360,11 +370,12 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 			$sql.= ' AND amount = '.(double) $object->amount;
 			$sql.= ' AND num_paiement = "'.$db->escape($object->num_paiement).'"';
 			$sql.= ' AND fk_bank = '.(int) $object->bank_line;
+			$sql.= ' AND entity = '.(int) $conf->entity;
 				
 			break;
 			
 		default:
-			return false;
+			return -1;
 			break;
 	}
 	
@@ -375,7 +386,7 @@ function _fetch(&$db, &$localObject, $object, $class, $facnumber = '')
 		return $localObject->fetch($obj->rowid);	
 	}
 	
-	return false;
+	return -1;
 }
 
 function _initDbFacture(&$db, &$localObject)
