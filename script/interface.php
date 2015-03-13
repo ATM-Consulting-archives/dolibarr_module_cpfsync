@@ -1,7 +1,7 @@
 <?php
 
 define('INC_FROM_CRON_SCRIPT', true);
-set_time_limit(0);
+set_time_limit(50);
 require('../config.php');
 require('../class/cpfsync.class.php');
 
@@ -81,7 +81,7 @@ function _sendData(&$ATMdb, $conf)
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
 	
-	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid';
+	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 30';
 	$ATMdb->Execute($sql);
 	
 	while ($ATMdb->Get_line())

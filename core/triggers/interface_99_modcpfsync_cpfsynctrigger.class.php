@@ -189,7 +189,7 @@ class Interfacecpfsynctrigger
 			$event->type_object = $type_object;
 			$event->doli_action = $action;
 			$event->facnumber = $facnumber;
-			$event->entity = $conf->entity;
+			$event->entity = __val($object->entity, $conf->entity, 'int', true);
 			
 			$event->save($PDOdb);
 		}
