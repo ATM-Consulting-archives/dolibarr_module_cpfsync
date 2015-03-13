@@ -127,7 +127,7 @@ class Interfacecpfsynctrigger
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
     	global $db;
-		
+
     	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
 		
     	if (!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
@@ -153,18 +153,20 @@ class Interfacecpfsynctrigger
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         } 
 		
-		/*Prévoir la gestion d'ajout / modification / suppression de prix fournisseur
-		 * elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && $action == 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE')
+		//Prévoir la gestion d'ajout / modification / suppression de prix fournisseur
+		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE'))
 		{
-			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
-			$type_object = 'ProductFournisseur';
-		 	$object->fourn_ref = GETPOST('ref_fourn'); //Référence de la ligne prix
+			
+			$object->fourn_ref = $object->ref_supplier = GETPOST('ref_fourn'); //Référence de la ligne prix attention ->fourn_ref deprecated
 			
 			$fourn = new Fournisseur($db);
 			$fourn->fetch((int) GETPOST('id_fourn'));
+			$object->code_fournisseur = $fourn->code_fournisseur; //Référence du fournisseur (permet le fetch dans interface)
 			
-			$object->code_fournisseur = $fourn->code_fournisseur; //Référence du fournisseur
-		}*/
+			$this->insert_sync_event($conf, $object, 'ProductFournisseur', $action, '', $object->entity);
+			
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+		}
 		
 		// Bills
 		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE')) 

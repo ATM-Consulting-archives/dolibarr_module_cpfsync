@@ -113,6 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
+print $res;exit;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -346,7 +347,7 @@ function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
 			$sql.= 'societe pr WHERE ';
 			
 			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
-			elseif ($object->code_client) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
+			elseif ($object->code_fournisseur) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
 			else return -1;
 			
 			break;
@@ -372,6 +373,27 @@ function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
 			$sql.= ' AND fk_bank = '.(int) $object->bank_line;
 			$sql.= ' AND entity = '.(int) $conf->entity;
 				
+			break;
+			
+		case 'ProductFournisseur':
+			$product = new Product($db);
+			$fournisseur = new Societe($db);
+			$object->code_client = false;
+			
+			//Dans le cas d'un prix fournisseur je doit vérifier si le fournisseur et le produit existe pour récupérer leurs Id
+			if (_fetch($db, $conf, $fournisseur, $object, 'Societe') > 0 && $product->fetch(null, $object->ref))
+			{
+				//Si le prix fournisseur existe je fait un update_buyprice sinon c'est un add_fournisseur en sortie
+				$sql.= 'product_fournisseur_price';
+	    		$sql.= ' WHERE fk_soc = '.$fournisseur->id;
+	    		$sql.= ' AND ref_fourn = "'.$db->escape($object->ref_supplier).'"';
+	    		$sql.= " AND fk_product = ".$product->id;
+	    		$sql.= " AND entity = ".$conf->entity;
+			}
+			else {
+				return -1;
+			}
+			
 			break;
 			
 		default:
