@@ -113,6 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
+//print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -355,7 +356,7 @@ function _delete(&$db, &$conf, $class, $object, $facnumber)
 		
 		case 'ProductFournisseur':
 			$product = new ProductFournisseur($db);
-			$product->fetch($localObject->id);
+			$product->fetch($localObject->fk_product);
 			return $product->remove_product_fournisseur_price($localObject->product_fourn_price_id);
 			
 			break;

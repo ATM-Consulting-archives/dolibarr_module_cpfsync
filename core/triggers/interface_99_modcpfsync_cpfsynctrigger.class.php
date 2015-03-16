@@ -163,8 +163,6 @@ class Interfacecpfsynctrigger
 				$fourn = new Fournisseur($db);
 				$fourn->fetch((int) GETPOST('socid'));
 				$object->code_fournisseur = $fourn->code_fournisseur; //Référence du fournisseur (permet le fetch dans interface)
-				
-				var_dump($object);exit;
 			}
 			else
 			{
