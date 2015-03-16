@@ -203,7 +203,6 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', '');
 	}
 	
-	
 	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
 }
 
@@ -262,7 +261,11 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
 	{
 		$localObject->product_fourn_price_id = 0;
 		$localObject->id = $object->id;
+		//update_buyprice return 0 if ok
 		$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
+		
+		if ($res !== 0) $res = -1;
+		else $res = 1;
 	}
 	else 
 	{
@@ -287,6 +290,11 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 		if ($class == 'Facture')
 		{
 			$oldLines = $localObject->lines;	
+		}
+		elseif ($class == 'ProductFournisseur')
+		{
+			$object->product_fourn_price_id = $localObject->product_fourn_price_id;
+			$object->fk_product = $object->product_id = $localObject->fk_product;
 		}
 		
 		$object->id = $localObject->id;
@@ -316,9 +324,11 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 				break;
 			
 			case 'ProductFournisseur':
-				$localObject->product_fourn_price_id = 0;
-				$localObject->id = $object->id;
+				//update_buyprice return 0 if ok
 				$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
+				if ($res !== 0) return -1;
+				else return 1;
+				
 				break;
 			
 			default:
