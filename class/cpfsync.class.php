@@ -9,7 +9,7 @@ class SyncEvent extends TObjetStd
 	public static $TActionModify = array('COMPANY_MODIFY', 'PRODUCT_MODIFY', 'PRODUCT_PRICE_MODIFY', 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE');
 	
 	// Tableau d'action pour savoir si l'action doit supprimer une entrée sur le dolibarr distant
-	public static $TActionDelete = array('COMPANY_DELETE', 'PRODUCT_DELETE', 'BILL_DELETE', 'PAYMENT_DELETE');
+	public static $TActionDelete = array('COMPANY_DELETE', 'PRODUCT_DELETE', 'BILL_DELETE', 'PAYMENT_DELETE', 'SUPPLIER_PRODUCT_BUYPRICE_REMOVE');
 	
 	// Tableau d'action pour savoir si l'action doit valider une entrée sur le dolibarr distant (Peut donner lieu à une création ou une modification)
 	public static $TActionValidate = array('BILL_VALIDATE');

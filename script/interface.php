@@ -352,6 +352,13 @@ function _delete(&$db, &$conf, $class, $object, $facnumber)
 		case 'Societe':
 			return $localObject->delete($localObject->id);
 			break;
+		
+		case 'ProductFournisseur':
+			$product = new ProductFournisseur($db);
+			$product->fetch($localObject->id);
+			return $product->remove_product_fournisseur_price($localObject->product_fourn_price_id);
+			
+			break;
 			
 		default:
 			return $localObject->delete();
