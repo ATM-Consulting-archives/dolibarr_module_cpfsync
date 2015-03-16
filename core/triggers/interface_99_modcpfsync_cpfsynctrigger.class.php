@@ -156,8 +156,10 @@ class Interfacecpfsynctrigger
 		//Prévoir la gestion d'ajout / modification / suppression de prix fournisseur
 		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE'))
 		{
-			
 			$object->fourn_ref = $object->ref_supplier = GETPOST('ref_fourn'); //Référence de la ligne prix attention ->fourn_ref deprecated
+			$object->price = GETPOST('price');
+			$object->qty = GETPOST('qty');
+			$object->remise_percent = GETPOST('remise_percent');
 			
 			$fourn = new Fournisseur($db);
 			$fourn->fetch((int) GETPOST('id_fourn'));

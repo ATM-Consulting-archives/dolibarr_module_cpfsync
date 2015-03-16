@@ -113,7 +113,6 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;exit;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -142,6 +141,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/user/class/user.class.php');
 		dol_include_once('/societe/class/client.class.php');
 		dol_include_once('/product/class/product.class.php');
+		dol_include_once('/fourn/class/fournisseur.product.class.php');
 		dol_include_once('/product/stock/class/mouvementstock.class.php');
 		dol_include_once('/compta/facture/class/facture.class.php');
 		dol_include_once('/compta/paiement/class/paiement.class.php');
@@ -258,6 +258,12 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
 		
 		$res = $localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
 	}
+	elseif ($class == 'ProductFournisseur')
+	{
+		$localObject->product_fourn_price_id = 0;
+		$localObject->id = $object->id;
+		$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
+	}
 	else 
 	{
 		$res = $localObject->create($user);
@@ -309,6 +315,12 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 				else return $localObject->update($localObject->id, $user);
 				break;
 			
+			case 'ProductFournisseur':
+				$localObject->product_fourn_price_id = 0;
+				$localObject->id = $object->id;
+				$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
+				break;
+			
 			default:
 				return $localObject->update($user);
 				break;
@@ -337,14 +349,14 @@ function _delete(&$db, &$conf, $class, $object, $facnumber)
 	}
 }
 
-function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
+function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 {
 	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX;
 	switch ($class) 
 	{
 		case 'Societe':
 			//Recherche sur code_client ou si non renseigné code_fournisseur
-			$sql.= 'societe pr WHERE ';
+			$sql.= 'societe WHERE ';
 			
 			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
 			elseif ($object->code_fournisseur) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
@@ -383,10 +395,15 @@ function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
 			//Dans le cas d'un prix fournisseur je doit vérifier si le fournisseur et le produit existe pour récupérer leurs Id
 			if (_fetch($db, $conf, $fournisseur, $object, 'Societe') > 0 && $product->fetch(null, $object->ref))
 			{
+				$object->id = $product->id;
+				$object->fk_soc = $fournisseur->id;
+				$object->ref_supplier = $fournisseur->code_fournisseur;
+				$object->fournisseur = $fournisseur;
+				
 				//Si le prix fournisseur existe je fait un update_buyprice sinon c'est un add_fournisseur en sortie
 				$sql.= 'product_fournisseur_price';
 	    		$sql.= ' WHERE fk_soc = '.$fournisseur->id;
-	    		$sql.= ' AND ref_fourn = "'.$db->escape($object->ref_supplier).'"';
+	    		$sql.= ' AND ref_fourn = "'.$db->escape($object->fourn_ref).'"'; //Ref de la ligne de prix
 	    		$sql.= " AND fk_product = ".$product->id;
 	    		$sql.= " AND entity = ".$conf->entity;
 			}
@@ -405,7 +422,15 @@ function _fetch(&$db, &$conf, &$localObject, $object, $class, $facnumber = '')
 	if ($db->num_rows($resql))
 	{
 		$obj = $db->fetch_object($resql);
-		return $localObject->fetch($obj->rowid);	
+		
+		if ($class == "ProductFournisseur") 
+		{
+			return $localObject->fetch_product_fournisseur_price($obj->rowid);
+		}
+		else 
+		{
+			return $localObject->fetch($obj->rowid);
+		}	
 	}
 	
 	return -1;
