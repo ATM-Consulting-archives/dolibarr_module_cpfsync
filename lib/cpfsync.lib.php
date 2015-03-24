@@ -66,8 +66,9 @@ function cpfsyncAdminPrintJsTest()
 				,type:"POST"
 				,data:{
 					action:"test"
+					,jsonp:1
 				}
-				,dataType:"json"
+				,dataType:"jsonp"
 				,success:function(res) {
 					console.log(url);
 					if (res == "ok") {

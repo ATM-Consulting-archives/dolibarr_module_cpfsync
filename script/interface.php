@@ -21,12 +21,12 @@ function traite_get(&$ATMdb, $action)
 	switch ($action) 
 	{
 		case 'ping':
-			if ($conf->cpfsync->enabled) __out('ok', 'json');
-			else __out('ko', 'json');
+			if ($conf->cpfsync->enabled) __out('ok', 'jsonp');
+			else __out('ko', 'jsonp');
 			break;
 			
 		case 'test':
-			__out(_test(), 'json');
+			__out(_test(), 'jsonp');
 			break;
 			
 		case 'sendData':
@@ -34,7 +34,7 @@ function traite_get(&$ATMdb, $action)
 			break;
 			
 		case 'refreshData':
-			__out(_refreshData($ATMdb, $conf, $db), 'json');
+			__out(_refreshData($ATMdb, $conf, $db), 'jsonp');
 			break;
 			
 		default:
