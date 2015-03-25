@@ -61,16 +61,20 @@ function cpfsyncAdminPrintJsTest()
 	$res.= '$(function() {
 		$("#testConnection").unbind().click(function() {
 			var url = $("input[name=CPFSYNC_URL_DISTANT]").val()+"/custom/cpfsync/script/interface.php";
+				
 			$.ajax({
 				url:url
 				,type:"POST"
+				,async:false
+				,contentType:"application/json"
 				,data:{
 					action:"test"
-					,jsonp:1
+					,format:"jsonp"
 				}
 				,dataType:"jsonp"
+				,jsonpCallback:"jsonCallback"
 				,success:function(res) {
-					console.log(url);
+					console.log(res);
 					if (res == "ok") {
 						$.jnotify("Connexion ok", "ok");
 					} else {
@@ -81,6 +85,7 @@ function cpfsyncAdminPrintJsTest()
 					$.jnotify("Erreur lors du test", "error");
 				}
 			});
+			
 		});
 	})';
 	$res.= '</script>';

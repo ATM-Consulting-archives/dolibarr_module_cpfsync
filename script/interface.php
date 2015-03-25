@@ -21,12 +21,12 @@ function traite_get(&$ATMdb, $action)
 	switch ($action) 
 	{
 		case 'ping':
-			if ($conf->cpfsync->enabled) __out('ok', 'jsonp');
-			else __out('ko', 'jsonp');
+			if ($conf->cpfsync->enabled) __out('ok', __get('format', 'json'));
+			else __out('ko', __get('format', 'json'));
 			break;
 			
 		case 'test':
-			__out(_test(), 'jsonp');
+			__out(_test(), __get('format', 'json'));
 			break;
 			
 		case 'sendData':
@@ -34,7 +34,7 @@ function traite_get(&$ATMdb, $action)
 			break;
 			
 		case 'refreshData':
-			__out(_refreshData($ATMdb, $conf, $db), 'jsonp');
+			__out(_refreshData($ATMdb, $conf, $db), __get('format', 'json'));
 			break;
 			
 		default:
@@ -46,15 +46,15 @@ function traite_get(&$ATMdb, $action)
 function _test()
 {
 	$url = __get('url', null);
-	return _askPing();
+	return _askPing($url);
 }
 
-function _askPing($url = null)
+function _askPing($url = null, $format = null)
 {
 	global $conf;
 	if (!$url) $url = $conf->global->CPFSYNC_URL_DISTANT;
 	
-	$url .= '/custom/cpfsync/script/interface.php?action=ping';
+	$url .= '/custom/cpfsync/script/interface.php';
 	
 	$data['action'] = 'ping';
 	$data_build  = http_build_query($data);
@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -124,12 +124,16 @@ function _sendData(&$ATMdb, $conf)
 
 function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent)
 {
+	if (!is_array($TIdSyncEvent)) return 0;
+	
 	foreach ($TIdSyncEvent as $id_sync_event)
 	{
 		$syncEvent = new SyncEvent;
 		$syncEvent->load($ATMdb, $id_sync_event);
 		$syncEvent->delete($ATMdb);
 	}
+	
+	return 1;
 }
 
 function _refreshData(&$ATMdb, &$conf, &$db)
