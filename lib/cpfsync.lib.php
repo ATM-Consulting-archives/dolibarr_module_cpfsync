@@ -74,7 +74,6 @@ function cpfsyncAdminPrintJsTest()
 				,dataType:"jsonp"
 				,jsonpCallback:"jsonCallback"
 				,success:function(res) {
-					console.log(res);
 					if (res == "ok") {
 						$.jnotify("Connexion ok", "ok");
 					} else {

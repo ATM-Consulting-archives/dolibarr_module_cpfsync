@@ -128,12 +128,22 @@ class Interfacecpfsynctrigger
     {
     	global $db;
 		
-    	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
-		
     	if (!defined('INC_FROM_DOLIBARR')) define('INC_FROM_DOLIBARR',true);
     	dol_include_once('/cpfsync/config.php');
 		dol_include_once('/cpfsync/class/cpfsync.class.php');
 		
+		if (empty($conf->global->CPFSYNC_INTERFACE_RUNNING) && $action == 'CAISSE_BON_ACHAT_BEFORE_CREATE_FACTURE')
+		{
+			dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
+		}
+		elseif (empty($conf->global->CPFSYNC_INTERFACE_RUNNING) && $action == 'CAISSE_BON_ACHAT_AFTER_CREATE_FACTURE')
+		{
+			dolibarr_del_const($db, 'CPFSYNC_LOCK');
+		}
+		
+		//Permet de bloquer les actions
+    	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
+				
 		$type_object = false;
 		$facnumber = '';
 		
@@ -145,7 +155,7 @@ class Interfacecpfsynctrigger
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         }
 		
-		// Products
+		// Products / services
 		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'PRODUCT_CREATE' || $action == 'PRODUCT_MODIFY' || $action == 'PRODUCT_DELETE' || $action == 'PRODUCT_PRICE_MODIFY')) 
 		{
 			$this->insert_sync_event($conf, $object, 'Product', $action, '', $object->entity);
@@ -153,7 +163,7 @@ class Interfacecpfsynctrigger
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         } 
 		
-		//Prévoir la gestion d'ajout / modification / suppression de prix fournisseur
+		// Supplier price
 		elseif (!empty($conf->global->CPFSYNC_SHARE_PRODUCT) && ($action == 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE' || $action == 'SUPPLIER_PRODUCT_BUYPRICE_REMOVE'))
 		{
 			if ($action == 'SUPPLIER_PRODUCT_BUYPRICE_REMOVE')
@@ -188,14 +198,34 @@ class Interfacecpfsynctrigger
 			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         }
+        
+		// Module caisse - bon achat
+		elseif ($action == 'CAISSE_BON_ACHAT_SAVE')
+		{
+			//l'objet contient déjà ->numero == ref facture
+			
+			//Récupération du code_client et code_fournisseur
+			$soc = new Societe($db);
+			$soc->fetch($object->fk_soc);
+			$object->code_client = $soc->code_client;
+			$object->code_fournisseur = $soc->code_fournisseur;
+			
+			//fk_discount (compliqué)
+			
+			//fk_avoir semble tjr être à 0
+			
+			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
+			
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
+		}
 		
-		 // Payments
+		// Payments
         elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'PAYMENT_CUSTOMER_CREATE' || $action == 'PAYMENT_DELETE' || $action == 'PAYMENT_ADD_TO_BANK')) 
         {
 			//TODO dans le cas d'un PAYMENT_DELETE il faudrait trouver le moyen de récupérer le facid de l'object ($object->facid = null et impossible de faire une requête sql)
 			//$object->getBillsArray() est senssé renvoyer la liste des factures sur lesquels porte le paiement mais retourne array vide
 			$facture = new Facture($db);
-			$facture->fetch(GETPOST('facid'));
+			$facture->fetch(GETPOST('facid') ? GETPOST('facid') : $object->facid);
 			$facnumber = $facture->ref; // ref == facnumber
 			
 			$this->insert_sync_event($conf, $object, 'Paiement', $action, $facnumber, $object->entity);

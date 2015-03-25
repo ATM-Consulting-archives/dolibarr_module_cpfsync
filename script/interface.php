@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;
+//print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -155,7 +155,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
-	
+		dolibarr_set_const($db, 'CPFSYNC_INTERFACE_RUNNING', 1);
+		
 		if (!($id_user = (int) $conf->global->CPFSYNC_ID_USER) || $id_user <= 0) return 'ko';
 		
 		$user = new User($db);
@@ -205,7 +206,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	}
 	finally
 	{
-		dolibarr_set_const($db, 'CPFSYNC_LOCK', '');
+		dolibarr_del_const($db, 'CPFSYNC_LOCK');
+		dolibarr_del_const($db, 'CPFSYNC_INTERFACE_RUNNING');
 	}
 	
 	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
