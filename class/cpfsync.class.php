@@ -3,7 +3,7 @@
 class SyncEvent extends TObjetStd
 {
 	// Tableau d'action pour savoir si l'action doit créer une nouvelle entrée sur le dolibarr distant
-	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'STOCK_MOVEMENT', 'CAISSE_BON_ACHAT_SAVE'); 
+	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'STOCK_MOVEMENT', 'CAISSE_BON_ACHAT_SAVE', 'TBonAchat'); 
 	
 	// Tableau d'action pour savoir si l'action doit modifier une entrée sur le dolibarr distant
 	public static $TActionModify = array('COMPANY_MODIFY', 'PRODUCT_MODIFY', 'PRODUCT_PRICE_MODIFY', 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE');
@@ -14,6 +14,8 @@ class SyncEvent extends TObjetStd
 	// Tableau d'action pour savoir si l'action doit valider une entrée sur le dolibarr distant (Peut donner lieu à une création ou une modification)
 	public static $TActionValidate = array('BILL_VALIDATE');
 	
+	// Tableau d'action pour les créations ou modifications des objets standard Abricot
+	public static $TActionSave = array('TBonAchat');
 	
 	public function __construct()
 	{

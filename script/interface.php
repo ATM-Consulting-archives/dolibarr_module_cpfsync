@@ -198,9 +198,13 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 				}
 				else
 				{
-					if (_create($db, $conf, $user, $class, $object) > 0) $res_id[] = $row['rowid'];					
+					if (_create($db, $conf, $user, $class, $object) > 0) $res_id[] = $row['rowid'];
 				}
-			}	
+			}
+			elseif (in_array($doli_action, SyncEvent::$TActionSave))
+			{
+				if (_save($ATMdb, $class, $object) > 0) $res_id[] = $row['rowid'];
+			}
 			
 		}
 	}
@@ -211,6 +215,13 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	}
 	
 	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
+}
+
+function _save(&$PDOdb, $class, $object)
+{
+	
+	
+	return 0;
 }
 
 function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')

@@ -132,6 +132,8 @@ class Interfacecpfsynctrigger
     	dol_include_once('/cpfsync/config.php');
 		dol_include_once('/cpfsync/class/cpfsync.class.php');
 		
+		//Module Caisse - Quand on créé un bon d'achat, l'objet TBonAchat va exécuter un BILL_VALIDATE et un PAYMENT_CUSTOMER_CREATE - l'objectif est de laisser TBonAchat
+		//faire la création sur le 2ème Dolibarr car le module caisse fait du traitement supplémentaire
 		if (empty($conf->global->CPFSYNC_INTERFACE_RUNNING) && $action == 'CAISSE_BON_ACHAT_BEFORE_CREATE_FACTURE')
 		{
 			dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
