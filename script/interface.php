@@ -169,8 +169,6 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		$data = __get('data', array());
 		$res_id = array(); //Tableau contenant les rowid de la table llx_sync_event
 		
-		$origin_entity = $conf->entity;
-		
 		foreach ($data as $row)
 		{
 			$object = unserialize($row['object_serialize']);
@@ -178,7 +176,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			$doli_action = $row['doli_action'];
 			
 			$conf->entity = (int) $row['entity'];
-	
+		
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
 				if (_create($db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
@@ -206,7 +204,6 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionSave))
 			{
-				$conf->entity = $origin_entity;
 				if (_save($ATMdb, $db, $conf, $class, $object) > 0) $res_id[] = $row['rowid'];
 			}
 			
@@ -223,6 +220,9 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 
 function _save(&$PDOdb, &$db, &$conf, $class, $object)
 {
+	$object->rowid = 0;
+	$object->force_facnumber = true;
+	
 	$soc = new Societe($db);
 	if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
 	{
