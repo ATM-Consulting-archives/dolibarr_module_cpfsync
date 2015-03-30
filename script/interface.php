@@ -220,15 +220,32 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 
 function _save(&$PDOdb, &$db, &$conf, $class, $object)
 {
-	$object->rowid = 0;
-	$object->force_facnumber = true;
+	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE date_cre = "'.$db->escape($object->get_date('date_cre', 'Y-m-d H:i:s')).'"';
+	$PDOdb->Execute($sql);
 	
-	$soc = new Societe($db);
-	if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
+	if ($PDOdb->Get_line())
 	{
-		$object->fk_soc = $soc->id;
-		return $object->save($PDOdb);
+		$ba = new TBonAchat;
+		$ba->load($PDOdb, $PDOdb->Get_field('rowid'));
+		
+		$ba->statut = $object->statut;
+		$ba->date_maj = $object->date_maj;
+		
+		return $ba->save($PDOdb);
 	}
+	else 
+	{
+		$object->rowid = 0;
+		$object->force_facnumber = true;
+		
+		$soc = new Societe($db);
+		if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
+		{
+			$object->fk_soc = $soc->id;
+			return $object->save($PDOdb);
+		}
+	}
+	
 	
 	return -1;
 }
