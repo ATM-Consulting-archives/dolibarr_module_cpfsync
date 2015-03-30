@@ -201,7 +201,7 @@ class Interfacecpfsynctrigger
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
         }
         
-		// Module caisse - bon achat
+		// Module caisse - bon achat / cadeau
 		elseif ($action == 'CAISSE_BON_ACHAT_SAVE')
 		{
 			//l'objet contient déjà ->numero == ref facture
@@ -212,7 +212,7 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
-			//fk_discount (compliqué)
+			//fk_discount (compliqué) //n'est-il pas généré après le save ? ou alors sur le traitement juste avant ? à voir
 			
 			//fk_avoir semble tjr être à 0
 			

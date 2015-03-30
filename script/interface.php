@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -152,6 +152,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/compta/paiement/class/paiement.class.php');
 		dol_include_once('/compta/bank/class/account.class.php');
 		dol_include_once('/core/lib/price.lib.php');
+		dol_include_once('/custom/caisse/class/caisse.class.php');
 		
 		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
@@ -203,7 +204,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionSave))
 			{
-				if (_save($ATMdb, $class, $object) > 0) $res_id[] = $row['rowid'];
+				if (_save($ATMdb, $db, $conf, $class, $object) > 0) $res_id[] = $row['rowid'];
 			}
 			
 		}
@@ -217,11 +218,22 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
 }
 
-function _save(&$PDOdb, $class, $object)
+function _save(&$PDOdb, &$db, &$conf, $class, $object)
 {
+	$soc = new Societe($db);
+	if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
+	{
+		$object->fk_soc = $soc->id;
+		
+		$fac = new Facture($db);
+		if ($fac->fetch(null, $object->numero) > 0)
+		{
+			$object->fk_facture = $fac->id;
+			$object->save($PDOdb);
+		}
+	}
 	
-	
-	return 0;
+	return -1;
 }
 
 function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
