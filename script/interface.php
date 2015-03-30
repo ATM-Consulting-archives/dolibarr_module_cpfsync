@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;
+//print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -229,7 +229,7 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 		if ($fac->fetch(null, $object->numero) > 0)
 		{
 			$object->fk_facture = $fac->id;
-			$object->save($PDOdb);
+			return $object->save($PDOdb);
 		}
 	}
 	
