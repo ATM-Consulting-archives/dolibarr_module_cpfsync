@@ -194,7 +194,7 @@ class Interfacecpfsynctrigger
 		}
 		
 		// Bills
-		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE')) 
+		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE' || $action == 'BILL_PAYED')) 
 		{
 			$this->insert_sync_event($conf, $object, 'Facture', $action, '', $object->entity);
 			

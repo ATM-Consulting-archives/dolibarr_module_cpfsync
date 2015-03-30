@@ -199,6 +199,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 				}
 				else
 				{
+					if ($doli_action == 'BILL_PAYED') continue;
+					
 					if (_create($db, $conf, $user, $class, $object) > 0) $res_id[] = $row['rowid'];
 				}
 			}
@@ -245,7 +247,6 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 			return $object->save($PDOdb);
 		}
 	}
-	
 	
 	return -1;
 }
@@ -299,6 +300,7 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
 		$product = new Product($db);
 		$product->fetch(null, $localObject->product_ref);
 		
+		//_create fonction custom de l'objet
 		$res = $localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
 	}
 	elseif ($class == 'ProductFournisseur')
@@ -331,6 +333,11 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 
 	if (_fetch($db, $conf, $localObject, $object, $class) > 0)
 	{
+		if ($doli_action == 'BILL_PAYED')
+		{
+			return $localObject->set_paid($user);
+		}
+		
 		if ($class == 'Facture')
 		{
 			$oldLines = $localObject->lines;	

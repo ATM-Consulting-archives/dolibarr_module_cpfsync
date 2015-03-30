@@ -12,7 +12,7 @@ class SyncEvent extends TObjetStd
 	public static $TActionDelete = array('COMPANY_DELETE', 'PRODUCT_DELETE', 'BILL_DELETE', 'PAYMENT_DELETE', 'SUPPLIER_PRODUCT_BUYPRICE_REMOVE');
 	
 	// Tableau d'action pour savoir si l'action doit valider une entrée sur le dolibarr distant (Peut donner lieu à une création ou une modification)
-	public static $TActionValidate = array('BILL_VALIDATE');
+	public static $TActionValidate = array('BILL_VALIDATE', 'BILL_PAYED');
 	
 	// Tableau d'action pour les créations ou modifications des objets standard Abricot
 	public static $TActionSave = array('CAISSE_BON_ACHAT_SAVE');
