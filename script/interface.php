@@ -154,6 +154,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/core/lib/price.lib.php');
 		dol_include_once('/custom/caisse/config.php');
 		dol_include_once('/custom/caisse/class/caisse.class.php');
+		dol_include_once('/core/class/discount.class.php');
 	
 		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
@@ -208,6 +209,10 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			elseif (in_array($doli_action, SyncEvent::$TActionSave))
 			{
 				if (_save($ATMdb, $db, $conf, $class, $object) > 0) $res_id[] = $row['rowid'];
+			}
+			elseif (in_array($doli_action, SyncEvent::$TActionOther))
+			{
+				if (_other($ATMdb, $db, $conf, $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
 			}
 			
 		}
@@ -483,6 +488,11 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 			
 			break;
 			
+		case 'DiscountAbsolute':
+			$sql.= 'societe_remise_except WHERE fk_soc = '.(int) $object->fk_soc.' AND fk_facture_source = '.(int) $object->fk_facture_source.' AND fk_facture = '.(int) $object->fk_facture;
+			//A voir si on test aussi sur amout_ttc
+			break;
+			
 		default:
 			return -1;
 			break;
@@ -504,6 +514,47 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 	}
 	
 	return -1;
+}
+
+function _other(&$ATMdb, &$db, &$conf, $class, $object, $doli_action)
+{
+	
+	switch ($doli_action) {
+		case 'DISCOUNT_LINK_TO_INVOICE':
+		case 'DISCOUNT_UNLINK_INVOICE':
+			
+			//fetch de la facture pour son id
+			$facture = new Facture($db);
+			if (!$facture->fetch(null, $object->ref_facture)) return -1;
+			
+			//fetch de la facture source pour son id
+			$factureSource = new Facture($db);
+			if (!$facture->fetch(null, $object->ref_facture_source)) return -2;
+			
+			//fetch du client pour son id
+			$societe = new Societe($db);
+			if (_fetch($db, $conf, $societe, $object, $class) <= 0) return -3;
+			
+			$object->fk_soc = $societe->id;
+			$object->fk_facture = $facture->id;
+			$object->fk_facture_source = $factureSource->id;
+			
+			//object DiscountAbsolute
+			$localObject = new $class($db);
+			if (_fetch($db, $conf, $localObject, $object, $class) <= 0) return -4;
+			
+			//Link or unlink
+			if ($doli_action == 'DISCOUNT_LINK_TO_INVOICE') $localObject->link_to_invoice(0,$facture->id);
+			else $localObject->unlink_invoice();
+			
+			break;
+			
+		default:
+			return 0;
+			break;
+			
+	}
+	
 }
 
 function _initDbFacture(&$db, &$localObject)

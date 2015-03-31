@@ -196,6 +196,7 @@ class Interfacecpfsynctrigger
 		// Bills
 		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE' || $action == 'BILL_PAYED')) 
 		{
+			var_dump($object);exit;
 			$this->insert_sync_event($conf, $object, 'Facture', $action, '', $object->entity);
 			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
@@ -215,6 +216,33 @@ class Interfacecpfsynctrigger
 			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
+		}
+		
+		// Association du bon d'achat à la facture
+		if ($action == 'DISCOUNT_LINK_TO_INVOICE' || $action == 'DISCOUNT_UNLINK_INVOICE')
+		{
+			
+			/*
+			 * $object->ref_facture //by me == ticket
+			 * $object->ref_facture_source //natif facture d'avoir
+			 */ 
+			
+        	//Récupération du facnumber
+        	$facture = new Facture($db);
+			$facture->fetch($object->fk_facture);
+			$object->ref_facture = $facture->ref; // ref == facnumber            	
+			
+			var_dump($object);exit;
+			
+			//Récupération du code_client et code_fournisseur
+			$soc = new Societe($db);
+			$soc->fetch($object->fk_soc);
+			$object->code_client = $soc->code_client;
+			$object->code_fournisseur = $soc->code_fournisseur;
+			
+			$this->insert_sync_event($conf, $object, 'DiscountAbsolute', $action);
+			
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 		}
 		
 		// Payments
