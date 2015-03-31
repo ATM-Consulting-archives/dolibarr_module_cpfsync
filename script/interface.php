@@ -491,6 +491,7 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 		case 'DiscountAbsolute':
 			$sql.= 'societe_remise_except WHERE fk_soc = '.(int) $object->fk_soc.' AND fk_facture_source = '.(int) $object->fk_facture_source.' AND fk_facture = '.(int) $object->fk_facture;
 			//A voir si on test aussi sur amout_ttc
+			var_dump($sql);
 			break;
 			
 		default:
@@ -529,11 +530,11 @@ function _other(&$ATMdb, &$db, &$conf, $class, $object, $doli_action)
 			
 			//fetch de la facture source pour son id
 			$factureSource = new Facture($db);
-			if (!$facture->fetch(null, $object->ref_facture_source)) return -2;
+			if (!$factureSource->fetch(null, $object->ref_facture_source)) return -2;
 			
 			//fetch du client pour son id
 			$societe = new Societe($db);
-			if (_fetch($db, $conf, $societe, $object, $class) <= 0) return -3;
+			if (_fetch($db, $conf, $societe, $object, 'Societe') <= 0) return -3;
 			
 			$object->fk_soc = $societe->id;
 			$object->fk_facture = $facture->id;
