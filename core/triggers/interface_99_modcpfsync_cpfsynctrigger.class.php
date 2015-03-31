@@ -220,7 +220,6 @@ class Interfacecpfsynctrigger
 		// Association du bon d'achat à la facture
 		if ($action == 'DISCOUNT_LINK_TO_INVOICE' || $action == 'DISCOUNT_UNLINK_INVOICE')
 		{
-			
 			/*
 			 * $object->ref_facture //by me == ticket
 			 * $object->ref_facture_source //natif facture d'avoir
@@ -230,6 +229,10 @@ class Interfacecpfsynctrigger
         	$facture = new Facture($db);
 			$facture->fetch($object->fk_facture);
 			$object->ref_facture = $facture->ref; // ref == facnumber        
+			
+			
+			if (substr($object->ref_facture, 0, 5) == '(PROV') return 0;
+			
 			
 			//Récupération du code_client et code_fournisseur
 			$soc = new Societe($db);
