@@ -240,7 +240,7 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
-			$this->insert_sync_event($conf, $object, 'DiscountAbsolute', $action);
+			$this->insert_sync_event($conf, $object, 'DiscountAbsolute', $action, '', $conf->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
 		}
