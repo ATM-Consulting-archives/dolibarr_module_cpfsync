@@ -152,8 +152,9 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		dol_include_once('/compta/paiement/class/paiement.class.php');
 		dol_include_once('/compta/bank/class/account.class.php');
 		dol_include_once('/core/lib/price.lib.php');
+		dol_include_once('/custom/caisse/config.php');
 		dol_include_once('/custom/caisse/class/caisse.class.php');
-		
+	
 		//Je lock le trigger du module pour éviter des ajouts dans llx_sync_event via le script
 		dolibarr_set_const($db, 'CPFSYNC_LOCK', 1);
 		dolibarr_set_const($db, 'CPFSYNC_INTERFACE_RUNNING', 1);
@@ -335,7 +336,8 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 	{
 		if ($doli_action == 'BILL_PAYED')
 		{
-			return $localObject->set_paid($user);
+			$localObject->set_paid($user);
+			return 1;
 		}
 		
 		if ($class == 'Facture')

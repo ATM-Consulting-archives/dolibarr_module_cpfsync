@@ -212,10 +212,6 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
-			//fk_discount (compliqué) //n'est-il pas généré après le save ? ou alors sur le traitement juste avant ? à voir
-			
-			//fk_avoir semble tjr être à 0
-			
 			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
