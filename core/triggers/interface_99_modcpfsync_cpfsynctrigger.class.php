@@ -230,9 +230,7 @@ class Interfacecpfsynctrigger
         	//Récupération du facnumber
         	$facture = new Facture($db);
 			$facture->fetch($object->fk_facture);
-			$object->ref_facture = $facture->ref; // ref == facnumber            	
-			
-			var_dump($object);exit;
+			$object->ref_facture = $facture->ref; // ref == facnumber        
 			
 			//Récupération du code_client et code_fournisseur
 			$soc = new Societe($db);
