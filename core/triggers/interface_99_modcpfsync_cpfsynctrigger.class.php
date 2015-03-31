@@ -196,7 +196,6 @@ class Interfacecpfsynctrigger
 		// Bills
 		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE' || $action == 'BILL_PAYED')) 
 		{
-			var_dump($object);exit;
 			$this->insert_sync_event($conf, $object, 'Facture', $action, '', $object->entity);
 			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
