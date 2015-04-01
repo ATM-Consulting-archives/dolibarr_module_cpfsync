@@ -232,7 +232,7 @@ class Interfacecpfsynctrigger
 			
 			
 			if (substr($object->ref_facture, 0, 5) == '(PROV') return 0;
-			
+			//if (preg_match('/^[\(]?PROV/i', $this->ref))
 			
 			//Récupération du code_client et code_fournisseur
 			$soc = new Societe($db);

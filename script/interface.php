@@ -489,9 +489,8 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 			break;
 			
 		case 'DiscountAbsolute':
-			$sql.= 'societe_remise_except WHERE fk_soc = '.(int) $object->fk_soc.' AND fk_facture_source = '.(int) $object->fk_facture_source.' AND fk_facture = '.(int) $object->fk_facture;
+			$sql.= 'societe_remise_except WHERE fk_soc = '.(int) $object->fk_soc.' AND fk_facture_source = '.(int) $object->fk_facture_source;
 			//A voir si on test aussi sur amout_ttc
-			var_dump($sql);
 			break;
 			
 		default:
@@ -545,8 +544,8 @@ function _other(&$ATMdb, &$db, &$conf, $class, $object, $doli_action)
 			if (_fetch($db, $conf, $localObject, $object, $class) <= 0) return -4;
 			
 			//Link or unlink
-			if ($doli_action == 'DISCOUNT_LINK_TO_INVOICE') $localObject->link_to_invoice(0,$facture->id);
-			else $localObject->unlink_invoice();
+			if ($doli_action == 'DISCOUNT_LINK_TO_INVOICE') return $localObject->link_to_invoice(0,$facture->id);
+			else return $localObject->unlink_invoice();
 			
 			break;
 			
