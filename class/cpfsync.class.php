@@ -18,7 +18,7 @@ class SyncEvent extends TObjetStd
 	public static $TActionSave = array('CAISSE_BON_ACHAT_SAVE');
 	
 	// Tableau d'action pour tous le reste
-	public static $TActionOther = array('DISCOUNT_LINK_TO_INVOICE', 'DISCOUNT_UNLINK_INVOICE');
+	public static $TActionOther = array('DISCOUNT_LINK_TO_INVOICE', 'DISCOUNT_UNLINK_INVOICE', 'CAISSE_BON_ACHAT_DECOMPTE');
 	
 	public function __construct()
 	{

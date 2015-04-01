@@ -224,8 +224,22 @@ class Interfacecpfsynctrigger
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
 		}
 		
+		// Module caisse - fonction decompte
+		elseif ($action == 'CAISSE_BON_ACHAT_DECOMPTE')
+		{
+			//Récupération de référance facture
+			$facture = new Facture($db);
+			$facture->fetch($object->fk_facture_target);
+			
+			$object->ref_facture_target = $facture->ref;
+			
+			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
+			
+			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
+		}
+		
 		// Association du bon d'achat à la facture
-		if ($action == 'DISCOUNT_LINK_TO_INVOICE' || $action == 'DISCOUNT_UNLINK_INVOICE')
+		elseif ($action == 'DISCOUNT_LINK_TO_INVOICE' || $action == 'DISCOUNT_UNLINK_INVOICE')
 		{
 			/*
 			 * $object->ref_facture //by me == ticket

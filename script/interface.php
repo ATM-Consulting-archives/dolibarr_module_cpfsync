@@ -499,6 +499,7 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 			
 		case 'DiscountAbsolute':
 			$sql.= 'societe_remise_except WHERE fk_soc = '.(int) $object->fk_soc.' AND fk_facture_source = '.(int) $object->fk_facture_source;
+			$sql.= ' ORDER BY rowid DESC LIMIT 1';
 			//A voir si on test aussi sur amout_ttc
 			break;
 			
@@ -525,7 +526,7 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 	return -1;
 }
 
-function _other(&$ATMdb, &$db, &$conf, $class, $object, $doli_action)
+function _other(&$PDOdb, &$db, &$conf, $class, $object, $doli_action)
 {
 	
 	switch ($doli_action) {
@@ -556,6 +557,25 @@ function _other(&$ATMdb, &$db, &$conf, $class, $object, $doli_action)
 			if ($doli_action == 'DISCOUNT_LINK_TO_INVOICE') return $localObject->link_to_invoice(0,$facture->id);
 			else return $localObject->unlink_invoice();
 			
+			break;
+		
+		case 'CAISSE_BON_ACHAT_DECOMPTE':
+			$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE date_cre = "'.$db->escape($object->get_date('date_cre', 'Y-m-d H:i:s')).'"';
+			$PDOdb->Execute($sql);
+			
+			if ($PDOdb->Get_line())
+			{
+				$ba = new TBonAchat;
+				$ba->load($PDOdb, $PDOdb->Get_field('rowid'));
+				
+				//fetch de la facture pour son id
+				$facture = new Facture($db);
+				if (!$facture->fetch(null, $object->ref_facture_target)) return -1;
+				
+				$ba->decompte($PDOdb, $object->amount_to_substract, $object->fk_facture_target);
+			}
+			
+			return 0;
 			break;
 			
 		default:
