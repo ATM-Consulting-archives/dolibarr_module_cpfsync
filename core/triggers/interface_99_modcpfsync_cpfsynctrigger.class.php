@@ -215,7 +215,7 @@ class Interfacecpfsynctrigger
 			if ($object->type == 'AVOIR' && $object->fk_facture_source)
 			{
 				$facture = new Facture($db);
-				$facture->fetch(null, $object->fk_facture_source);
+				$facture->fetch($object->fk_facture_source);
 				$object->ref_facture_source = $facture->ref;
 			}
 			

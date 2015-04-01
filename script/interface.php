@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;
+//print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -241,6 +241,8 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 	}
 	else 
 	{
+		_reloadMask($db, $conf);
+		
 		$object->rowid = 0;
 		$object->force_facnumber = true;
 		
@@ -627,4 +629,19 @@ function _isExistingObject(&$db, $element, $object)
 		else return 0;
 	}
 	return -1;
+}
+
+function _reloadMask(&$db, &$conf)
+{
+	$conf->global->FACTURE_ADDON = dolibarr_get_const($db, 'FACTURE_ADDON', $conf->entity);
+	
+	if ($conf->global->FACTURE_ADDON == 'mod_facture_mercure') 
+	{
+		//Je recharge le mask en fonction de entity
+		$conf->global->FACTURE_MERCURE_MASK_INVOICE = dolibarr_get_const($db, 'FACTURE_MERCURE_MASK_INVOICE', $conf->entity);
+		$conf->global->FACTURE_MERCURE_MASK_REPLACEMENT = dolibarr_get_const($db, 'FACTURE_MERCURE_MASK_REPLACEMENT', $conf->entity);
+		$conf->global->FACTURE_MERCURE_MASK_CREDIT = dolibarr_get_const($db, 'FACTURE_MERCURE_MASK_CREDIT', $conf->entity);
+		$conf->global->FACTURE_MERCURE_MASK_DEPOSIT = dolibarr_get_const($db, 'FACTURE_MERCURE_MASK_DEPOSIT', $conf->entity);	
+	}
+	
 }
