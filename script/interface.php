@@ -571,8 +571,9 @@ function _other(&$PDOdb, &$db, &$conf, $class, $object, $doli_action)
 				//fetch de la facture pour son id
 				$facture = new Facture($db);
 				if (!$facture->fetch(null, $object->ref_facture_target)) return -1;
-				
-				$ba->decompte($PDOdb, $object->amount_to_substract, $object->fk_facture_target);
+			
+				$ba->decompte($PDOdb, $object->amount_to_substract, $facture->id);
+				return 1;
 			}
 			
 			return 0;

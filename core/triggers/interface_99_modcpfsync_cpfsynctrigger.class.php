@@ -241,11 +241,14 @@ class Interfacecpfsynctrigger
 		// Association du bon d'achat à la facture
 		elseif ($action == 'DISCOUNT_LINK_TO_INVOICE' || $action == 'DISCOUNT_UNLINK_INVOICE')
 		{
-			/*
+			/*	INFO
 			 * $object->ref_facture //by me == ticket
 			 * $object->ref_facture_source //natif facture d'avoir
 			 */ 
 			
+			/*
+			 * Traitement que je n'utilise plus - à voir si on le remet éventuellement sans le module caisse
+			  
         	//Récupération du facnumber
         	$facture = new Facture($db);
 			$facture->fetch($object->fk_facture);
@@ -264,6 +267,8 @@ class Interfacecpfsynctrigger
 			$this->insert_sync_event($conf, $object, 'DiscountAbsolute', $action, '', $conf->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
+			 
+			*/
 		}
 		
 		// Payments
