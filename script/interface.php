@@ -113,7 +113,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -201,9 +201,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 				}
 				else
 				{
-					if ($doli_action == 'BILL_PAYED') continue;
-					
-					if (_create($db, $conf, $user, $class, $object) > 0) $res_id[] = $row['rowid'];
+					if (_create($db, $conf, $user, $class, $object, $row['facnumber'], $doli_action) > 0) $res_id[] = $row['rowid'];
 				}
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionSave))
@@ -249,6 +247,13 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 		$soc = new Societe($db);
 		if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
 		{
+			if ($object->type == 'AVOIR' && $object->ref_facture_source)
+			{
+				$fac = new Facture($db);
+				$fac->fetch(null, $object->ref_facture_source);
+				$object->fk_facture = $fac->id;
+			}
+			
 			$object->fk_soc = $soc->id;
 			return $object->save($PDOdb);
 		}
@@ -257,8 +262,10 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 	return -1;
 }
 
-function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '')
+function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_action = '')
 {
+	if ($doli_action == 'BILL_PAYED') return 1; //Pas de create pour un BILL_PAYED, si on ici avec ça c'est que la facture d'avant n'existe pas.
+	
 	$localObject = clone $object;
 	$localObject->id = 0;
 	

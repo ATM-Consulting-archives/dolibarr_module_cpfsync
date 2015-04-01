@@ -212,6 +212,13 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
+			if ($object->type == 'AVOIR' && $object->fk_facture_source)
+			{
+				$facture = new Facture($db);
+				$facture->fetch(null, $object->fk_facture_source);
+				$object->ref_facture_source = $facture->ref;
+			}
+			
 			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
