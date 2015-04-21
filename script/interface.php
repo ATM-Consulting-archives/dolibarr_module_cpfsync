@@ -170,6 +170,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		$data = __get('data', array());
 		$res_id = array(); //Tableau contenant les rowid de la table llx_sync_event
+		$msg = 'ok';
 		
 		foreach ($data as $row)
 		{
@@ -215,13 +216,18 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			
 		}
 	}
-	finally
+	//finally //PHP min 5.5
+	catch (Exception $e)
 	{
-		dolibarr_del_const($db, 'CPFSYNC_LOCK');
-		dolibarr_del_const($db, 'CPFSYNC_INTERFACE_RUNNING');
+		$msg = $e;
+		mail('phf@atm-consulting.fr', 'EspritMaison', $e);
 	}
 	
-	return array('msg' => 'ok', 'TIdSyncEvent' => $res_id);
+	//Devraient être dans le finally
+	dolibarr_del_const($db, 'CPFSYNC_LOCK');
+	dolibarr_del_const($db, 'CPFSYNC_INTERFACE_RUNNING');
+	
+	return array('msg' => $msg, 'TIdSyncEvent' => $res_id);
 }
 
 function _save(&$PDOdb, &$db, &$conf, $class, $object)
