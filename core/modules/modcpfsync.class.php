@@ -254,6 +254,13 @@ class modcpfsync extends DolibarrModules
 	 */
 	function init($options='')
 	{
+			
+		define('INC_FROM_DOLIBARR',true);
+		dol_include_once('/cpfsync/config.php');
+		
+		dol_include_once("/cpfsync/script/create-maj-base.php");
+		
+		
 		$sql = array();
 
 		$result=$this->_load_tables('/cpfsync/sql/');
@@ -272,9 +279,6 @@ class modcpfsync extends DolibarrModules
 	function remove($options='')
 	{
 		$sql = array();
-		
-		$url = dol_buildpath("/cpfsync/script/create-maj-base.php",2);
-		file_get_contents($url);
 		
 		return $this->_remove($sql, $options);
 	}
