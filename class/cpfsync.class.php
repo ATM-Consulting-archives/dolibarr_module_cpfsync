@@ -3,7 +3,7 @@
 class SyncEvent extends TObjetStd
 {
 	// Tableau d'action pour savoir si l'action doit créer une nouvelle entrée sur le dolibarr distant
-	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'STOCK_MOVEMENT'); 
+	public static $TActionCreate = array('COMPANY_CREATE', 'PRODUCT_CREATE', 'PAYMENT_CUSTOMER_CREATE', 'STOCK_MOVEMENT', 'PAYMENT_ADD_TO_BANK'); 
 	
 	// Tableau d'action pour savoir si l'action doit modifier une entrée sur le dolibarr distant
 	public static $TActionModify = array('COMPANY_MODIFY', 'PRODUCT_MODIFY', 'PRODUCT_PRICE_MODIFY', 'SUPPLIER_PRODUCT_BUYPRICE_UPDATE');
@@ -18,7 +18,7 @@ class SyncEvent extends TObjetStd
 	public static $TActionSave = array('CAISSE_BON_ACHAT_SAVE');
 	
 	// Tableau d'action pour tous le reste
-	public static $TActionOther = array('DISCOUNT_LINK_TO_INVOICE', 'DISCOUNT_UNLINK_INVOICE', 'CAISSE_BON_ACHAT_DECOMPTE');
+	public static $TActionOther = array('DISCOUNT_LINK_TO_INVOICE', 'DISCOUNT_UNLINK_INVOICE');
 	
 	public function __construct()
 	{

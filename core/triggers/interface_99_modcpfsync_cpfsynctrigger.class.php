@@ -196,6 +196,30 @@ class Interfacecpfsynctrigger
 		// Bills
 		elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'BILL_VALIDATE' || $action == 'BILL_DELETE' || $action == 'BILL_PAYED')) 
 		{
+			if ($action == 'BILL_VALIDATE') 
+			{
+				$object->TRefRemise = array();
+				$sql = "SELECT re.rowid, re.amount_ht, re.amount_tva, re.amount_ttc,";
+				$sql .= " re.description, re.fk_facture_source";
+				$sql .= " FROM " . MAIN_DB_PREFIX . "societe_remise_except as re";
+				$sql .= " WHERE fk_facture = " . $object->id;
+				$resql = $db->query($sql);
+				
+				if ($resql) {
+					$num = $db->num_rows($resql);
+					$i = 0;
+					$invoice = new Facture($db);
+					while ($i < $num) {
+						$obj = $db->fetch_object($resql);
+						$invoice->fetch($obj->fk_facture_source);
+						
+						$object->TRefRemise = $invoice->ref;
+						
+						$i ++;
+					}
+				}
+			}
+			
 			$this->insert_sync_event($conf, $object, 'Facture', $action, '', $object->entity);
 			
             dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->id);
@@ -227,6 +251,9 @@ class Interfacecpfsynctrigger
 		// Module caisse - fonction decompte
 		elseif ($action == 'CAISSE_BON_ACHAT_DECOMPTE')
 		{
+			/*
+			 * Traitement que je n'utilise plus pcq je ne peu plus récupérer le référence de la facture autre que provisoire
+			 
 			//Récupération de référance facture
 			$facture = new Facture($db);
 			$facture->fetch($object->fk_facture_target);
@@ -236,6 +263,7 @@ class Interfacecpfsynctrigger
 			$this->insert_sync_event($conf, $object, 'TBonAchat', $action, '', $object->entity);
 			
 			dol_syslog("Trigger '" . $this->name . "' for action '$action' launched by " . __FILE__ . ". id=" . $object->getId());
+			*/
 		}
 		
 		// Association du bon d'achat à la facture

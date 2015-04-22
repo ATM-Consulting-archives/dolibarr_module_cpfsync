@@ -6,8 +6,8 @@ require('../config.php');
 require('../class/cpfsync.class.php');
 
 //En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
-/*ini_set('display_errors',1);
-error_reporting(E_ALL);*/
+//ini_set('display_errors',1);
+//error_reporting(E_ALL);
 
 $ATMdb=new TPDOdb;
 $action = __get('action', 0);
@@ -36,6 +36,9 @@ function traite_get(&$ATMdb, $action)
 		case 'refreshData':
 			__out(_refreshData($ATMdb, $conf, $db), __get('format', 'json'));
 			break;
+			
+		case 'getObject':
+			__out(_sendObject($ATMdb, $conf, $db), __get('format', 'json'));
 			
 		default:
 			exit;
@@ -172,6 +175,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		$res_id = array(); //Tableau contenant les rowid de la table llx_sync_event
 		$msg = 'ok';
 		
+		$TErrors=array();
+		
 		foreach ($data as $row)
 		{
 			$object = unserialize($row['object_serialize']);
@@ -182,11 +187,11 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
-				if (_create($db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
+				if (_create($ATMdb, $db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionModify))
 			{
-				if (_update($db, $conf, $user, $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
+				if (_update($ATMdb, $db, $conf, $user, $TErrors[$row['rowid']], $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionDelete))
 			{
@@ -198,11 +203,11 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 				
 				if ($exist) 
 				{
-					if (_update($db, $conf, $user, $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
+					if (_update($ATMdb, $db, $conf, $user,$TErrors[$row['rowid']], $class, $object, $doli_action) > 0) $res_id[] = $row['rowid'];
 				}
 				else
 				{
-					if (_create($db, $conf, $user, $class, $object, $row['facnumber'], $doli_action) > 0) $res_id[] = $row['rowid'];
+					if (_create($ATMdb, $db, $conf, $user, $class, $object, $row['facnumber'], $doli_action) > 0) $res_id[] = $row['rowid'];
 				}
 			}
 			elseif (in_array($doli_action, SyncEvent::$TActionSave))
@@ -227,12 +232,12 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	dolibarr_del_const($db, 'CPFSYNC_LOCK');
 	dolibarr_del_const($db, 'CPFSYNC_INTERFACE_RUNNING');
 	
-	return array('msg' => $msg, 'TIdSyncEvent' => $res_id);
+	return array('msg' => $msg, 'TIdSyncEvent' => $res_id, 'TErrors'=>$TErrors);
 }
 
 function _save(&$PDOdb, &$db, &$conf, $class, $object)
 {
-	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE date_cre = "'.$db->escape($object->get_date('date_cre', 'Y-m-d H:i:s')).'"';
+	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE numero=\''.$object->numero.'\'';
 	$PDOdb->Execute($sql);
 	
 	if ($PDOdb->Get_line())
@@ -241,7 +246,6 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 		$ba->load($PDOdb, $PDOdb->Get_field('rowid'));
 		
 		$ba->statut = $object->statut;
-		$ba->date_maj = $object->date_maj;
 		
 		return $ba->save($PDOdb);
 	}
@@ -255,14 +259,18 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 		$soc = new Societe($db);
 		if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
 		{
-			if ($object->type == 'AVOIR' && $object->ref_facture_source)
-			{
+			/*if ($object->type == 'AVOIR' && $object->ref_facture_source)*/
+			if ($object->ref_facture_source || $object->numero){
 				$fac = new Facture($db);
-				$fac->fetch(null, $object->ref_facture_source);
+				$fac->fetch(null,  ($object->numero) ? $object->numero : $object->ref_facture_source);
 				$object->fk_facture = $fac->id;
+				
+				if (!$object->fk_facture) return 1; //Gestion merdique, mais ça éviter de tous faire planter, et la caisse fait des exit 
 			}
 			
 			$object->fk_soc = $soc->id;
+			
+			
 			return $object->save($PDOdb);
 		}
 	}
@@ -270,9 +278,13 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 	return -1;
 }
 
-function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_action = '')
+function _create(&$ATMdb, &$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_action = '')
 {
+	if (_existObject($db, $conf, $object, $class) > 0) return 1; 
+	
 	if ($doli_action == 'BILL_PAYED') return 1; //Pas de create pour un BILL_PAYED, si on ici avec ça c'est que la facture d'avant n'existe pas.
+	
+	if (!is_object($object)) return 1;
 	
 	$localObject = clone $object;
 	$localObject->id = 0;
@@ -301,7 +313,6 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_a
 				$facLine->fk_product = $product->id;
 			}
 		}
-		
 	}
 	elseif ($class == 'Paiement')
 	{
@@ -319,7 +330,19 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_a
 	if ($class == 'MouvementStock')
 	{
 		$product = new Product($db);
-		$product->fetch(null, $localObject->product_ref);
+		$r = $product->fetch(null, $localObject->product_ref);
+		
+		if ($r <= 0)
+		{
+			$product = _getObjectDistance($db, $localObject, 'product');
+			$product->create($user);	
+		}
+		
+		if ($localObject->type === '')
+		{
+			if ($localObject->qty < 0) $localObject->type = 1; //decrease
+			else $localObject->type = 0; //increase
+		}
 		
 		//_create fonction custom de l'objet
 		$res = $localObject->_create($user, $product->id, $localObject->entrepot_id, $localObject->qty, $localObject->type, $localObject->price, $localObject->label);
@@ -328,6 +351,11 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_a
 	{
 		$localObject->product_fourn_price_id = 0;
 		$localObject->id = $object->id;
+		$object->qty = (int)$object->qty;
+		if (!$object->qty) $object->qty = 1;
+		
+		if (!isset($object->fournisseur)) $object->fournisseur = _getObjectDistance($db, $object, 'price_fournisseur');
+		
 		//update_buyprice return 0 if ok
 		$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
 		
@@ -341,6 +369,24 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_a
 	
 	if ($class == 'Facture' && $res)
 	{
+		//decompte()
+		$montant_reste = $localObject->total_ttc; //
+		foreach ($localObject->TRefRemise as $ref)
+		{
+			//Load BonAchat by ref	
+			$ba = new TBonAchat;
+			$ba->loadByNumero($PDOdb, $ref);
+			
+			$remise = new DiscountAbsolute($db);
+    		$result = $remise->fetch($ba->fk_discount);
+			
+			if ($result > 0) 
+			{
+				$montant_reste = $ba->decompte($PDOdb, $montant_reste, $localObject->id);
+			}
+			
+		}
+		
 		//Permet de générer la référence
 		$res = $localObject->validate($user, $object->facnumber);
 	}
@@ -348,11 +394,12 @@ function _create(&$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_a
 	return $res;
 }
 
-function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
+function _update(&$ATMdb, &$db, &$conf, &$user,&$TError, $class, $object, $doli_action)
 {
 	$localObject = new $class($db);
 
-	if (_fetch($db, $conf, $localObject, $object, $class) > 0)
+    $res = _fetch($db, $conf, $localObject, $object, $class);
+	if ($res>0)
 	{
 		if ($doli_action == 'BILL_PAYED')
 		{
@@ -385,7 +432,7 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 			_initDbFacture($db, $localObject);
 			_updateLines($db, $localObject, $oldLines);
 		}
-		
+	
 		switch ($class) {
 			case 'Societe':
 				return $localObject->update($localObject->id, $user);
@@ -398,8 +445,13 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 			
 			case 'ProductFournisseur':
 				//update_buyprice return 0 if ok
+				if ($object->qty == '') $object->qty = 1;
 				$res = $localObject->update_buyprice($object->qty, $object->price, $user, $object->price_base_type, $object->fournisseur, 0, $object->fourn_ref, $object->tva_tx, 0, $object->remise_percent);
-				if ($res !== 0) return -1;
+				if ($res !== 0) {
+					$TError[] = 'update_buyprice '.$res;
+					return -1;
+				
+				}
 				else return 1;
 				
 				break;
@@ -412,13 +464,18 @@ function _update(&$db, &$conf, &$user, $class, $object, $doli_action)
 	}
 	else 
 	{
-		return _create($db, $conf, $user, $class, $object);
+		$TError[] = 'WARNING not udpate > create '.$class.' '.$object->id.' '.$res;
+		
+		return _create($ATMdb, $db, $conf, $user, $class, $object);
 	}
 }
 
 function _delete(&$db, &$conf, $class, $object, $facnumber)
 {
 	$localObject = new $class($db);
+	
+	if ($class == 'Facture' && preg_match('/^\(PROV[0-9]*\)$/', $object->ref)) return 1;
+	
 	if (_fetch($db, $conf, $localObject, $object, $class, $facnumber) <= 0) return -1;
 	
 	switch ($class) {
@@ -434,7 +491,10 @@ function _delete(&$db, &$conf, $class, $object, $facnumber)
 			break;
 			
 		default:
-			return $localObject->delete();
+			$res = $localObject->delete();
+			if ($class == 'Facture') $res = 1; //On force la suppression de l'évènement pour une facture
+			
+			return $res;
 			break;
 	}
 }
@@ -482,9 +542,18 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 			$fournisseur = new Societe($db);
 			$object->code_client = false;
 			
+			//Permet de récupérer le bon fournisseur
+			if (!$object->code_fournisseur) 
+			{
+				$societe = _getObjectDistance($db, $object, 'price_fournisseur');
+				$object->code_fournisseur = $societe->code_fournisseur;	
+			}
+	
 			//Dans le cas d'un prix fournisseur je doit vérifier si le fournisseur et le produit existe pour récupérer leurs Id
 			if (_fetch($db, $conf, $fournisseur, $object, 'Societe') > 0 && $product->fetch(null, $object->ref))
 			{
+				if (!$object->fourn_ref) $object->fourn_ref = _getObjectDistance($db, $object, 'ref_price_fournisseur');
+				
 				$object->id = $product->id;
 				$object->fk_soc = $fournisseur->id;
 				$object->ref_supplier = $fournisseur->code_fournisseur;
@@ -498,7 +567,7 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 	    		$sql.= " AND entity = ".$conf->entity;
 			}
 			else {
-				return -1;
+				return -2;
 			}
 			
 			break;
@@ -577,12 +646,15 @@ function _other(&$PDOdb, &$db, &$conf, $class, $object, $doli_action)
 				//fetch de la facture pour son id
 				$facture = new Facture($db);
 				if (!$facture->fetch(null, $object->ref_facture_target)) return -1;
-			
-				$ba->decompte($PDOdb, $object->amount_to_substract, $facture->id);
+				
+				$remise = new DiscountAbsolute($db);
+        		$result = $remise->fetch($ba->fk_discount);
+				
+				if ($result > 0) $ba->decompte($PDOdb, $object->amount_to_substract, $facture->id);
 				return 1;
 			}
 			
-			return 0;
+			return 1; //On force la suppression de l'évènement 
 			break;
 			
 		default:
@@ -656,6 +728,134 @@ function _isExistingObject(&$db, $element, $object)
 		else return 0;
 	}
 	return -1;
+}
+
+function _existObject(&$db, &$conf, &$localObject, $class)
+{
+	switch ($class) {
+		case 'Product':
+			$product = new Product($db);
+			return $product->fetch(null, $localObject->ref);
+			break;
+		
+		case 'Societe':
+			$societe = new Societe($db);
+			return _fetch($db, $conf, $societe, $localObject, $class);
+			break;
+		default:
+			return 0;
+			break;
+	}
+}
+
+function _getObjectDistance(&$db, &$object, $type)
+{
+	global $conf;
+	$url = $conf->global->CPFSYNC_URL_DISTANT;
+	
+	$url .= '/custom/cpfsync/script/interface.php';
+	
+	$data['action'] = 'getObject';
+	$data['type'] = $type;
+	
+	if ($type == 'price_fournisseur')
+	{
+		$data['ref_product'] = $object->ref;
+	}
+	elseif ($type == 'product') 
+	{
+		$data['ref_product'] = $object->product_ref;
+	}
+	elseif ($type == 'ref_price_fournisseur')
+	{
+		$data['product_fourn_price_id'] = $object->product_fourn_price_id; //il s'agit de l'id d'origine donc je peux le renvoyer tel quel pour récupérer la référence
+	}
+	
+	$data_build  = http_build_query($data);
+	
+	$context = stream_context_create(array(
+		'http' => array(
+		    'method' => 'POST'
+		    ,'content' => $data_build
+		    ,'timeout' => 5 //Si je n'ai pas de réponse dans les 10sec ma requête http s'arrête
+		    ,'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+                . "Content-Length: " . strlen($data_build) . "\r\n",
+		)
+	));
+	
+	$res = json_decode(file_get_contents($url, false, $context));
+	
+	if ($type == 'price_fournisseur')
+	{
+		$fournisseur = new Societe($db);
+		$fournisseur->code_fournisseur = $res;
+		_fetch($db, $conf, $fournisseur, $fournisseur, 'Societe');
+		return $fournisseur;
+	}
+	elseif ($type == 'product') 
+	{
+		$product = new Product($db);
+		$res = unserialize($res);
+		$product = $res;
+		
+		$initDb = function(&$db) { $this->db = &$db; };
+		$initDb = Closure::bind($initDb , $product, 'Product');
+		$initDb($db);
+		
+		return $product;
+	}
+	elseif ($type == 'ref_price_fournisseur')
+	{
+		return $res;
+	}
+	
+	return 0;	
+}
+
+function _sendObject(&$PDOdb, &$conf, &$db)
+{
+	$type = __get('type');
+	
+	switch ($type) 
+	{
+		case 'price_fournisseur':
+			dol_include_once('/fourn/class/fournisseur.class.php');
+			
+			$ref = __get('ref_product');
+			$product = new ProductFournisseur($db);
+			$product->fetch(null, $ref);
+			
+			$list = $product->list_product_fournisseur_price($product->id);
+			
+			if ($list == -1) return false;
+		
+			$fournisseur = new Societe($db);
+			$fournisseur->fetch($list[0]->fourn_id);
+			
+			return $fournisseur->code_fournisseur;
+			break;
+		
+		case 'product':
+			dol_include_once('/product/class/product.class.php');
+			
+			$product = new Product($db);
+			$product->fetch(null, __get('ref_product'));
+			
+			return serialize($product);
+			break;	
+			
+		case 'ref_price_fournisseur':
+			dol_include_once('/fourn/class/fournisseur.product.class.php');
+			
+			$productFournisseur = new ProductFournisseur($db);
+			$productFournisseur->fetch_product_fournisseur_price(__get('product_fourn_price_id'));
+			return $productFournisseur->fourn_ref;
+			break;
+			
+		default:
+			return false;
+			break;
+	}
 }
 
 function _reloadMask(&$db, &$conf)
