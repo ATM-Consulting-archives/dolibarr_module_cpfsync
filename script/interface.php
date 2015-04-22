@@ -259,10 +259,12 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 		$soc = new Societe($db);
 		if (_fetch($db, $conf, $soc, $object, 'Societe') > 0)
 		{
-			/*if ($object->type == 'AVOIR' && $object->ref_facture_source)*/
-			if ($object->ref_facture_source || $object->numero){
+			if ($object->type == 'AVOIR' && $object->ref_facture_source) { //A ne pas confondre avec $object->numero - le module caisse crée l'avoir automatiquement donc à ne pas gérer au part sinon création de 2 avoirs
 				$fac = new Facture($db);
-				$fac->fetch(null,  ($object->numero) ? $object->numero : $object->ref_facture_source);
+				$r = $fac->fetch(null, $object->ref_facture_source);
+				
+				if ($r <= 0) return 1; // On force la suppression de l'évènement car dans ce cas, si la facture n'existe le module caisse retourne une erreur
+				
 				$object->fk_facture = $fac->id;
 			}
 			

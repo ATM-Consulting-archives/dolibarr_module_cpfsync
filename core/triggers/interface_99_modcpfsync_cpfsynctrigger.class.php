@@ -236,7 +236,8 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
-			if ($object->fk_facture_source)
+			//Le type AVOIR est utile car la syncro a besoin de la référence de la facture source
+			if ($object->type == 'AVOIR' && $object->fk_facture_source)
 			{
 				$facture = new Facture($db);
 				$facture->fetch($object->fk_facture_source);
