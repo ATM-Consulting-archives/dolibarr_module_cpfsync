@@ -116,7 +116,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;
+//print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
