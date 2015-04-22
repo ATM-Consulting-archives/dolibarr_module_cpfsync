@@ -213,7 +213,7 @@ class Interfacecpfsynctrigger
 						$obj = $db->fetch_object($resql);
 						$invoice->fetch($obj->fk_facture_source);
 						
-						$object->TRefRemise = $invoice->ref;
+						$object->TRefRemise[] = $invoice->ref;
 						
 						$i ++;
 					}
@@ -236,7 +236,7 @@ class Interfacecpfsynctrigger
 			$object->code_client = $soc->code_client;
 			$object->code_fournisseur = $soc->code_fournisseur;
 			
-			if ($object->type == 'AVOIR' && $object->fk_facture_source)
+			if ($object->fk_facture_source)
 			{
 				$facture = new Facture($db);
 				$facture->fetch($object->fk_facture_source);

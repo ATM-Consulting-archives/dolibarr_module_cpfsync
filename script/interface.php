@@ -116,7 +116,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -264,12 +264,9 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 				$fac = new Facture($db);
 				$fac->fetch(null,  ($object->numero) ? $object->numero : $object->ref_facture_source);
 				$object->fk_facture = $fac->id;
-				
-				if (!$object->fk_facture) return 1; //Gestion merdique, mais ça éviter de tous faire planter, et la caisse fait des exit 
 			}
 			
 			$object->fk_soc = $soc->id;
-			
 			
 			return $object->save($PDOdb);
 		}
@@ -370,21 +367,24 @@ function _create(&$ATMdb, &$db, &$conf, &$user, $class, $object, $facnumber = ''
 	if ($class == 'Facture' && $res)
 	{
 		//decompte()
-		$montant_reste = $localObject->total_ttc; //
-		foreach ($localObject->TRefRemise as $ref)
+		if (isset($localObject->TRefRemise))
 		{
-			//Load BonAchat by ref	
-			$ba = new TBonAchat;
-			$ba->loadByNumero($PDOdb, $ref);
-			
-			$remise = new DiscountAbsolute($db);
-    		$result = $remise->fetch($ba->fk_discount);
-			
-			if ($result > 0) 
+			$montant_reste = $localObject->total_ttc; //
+			foreach ($localObject->TRefRemise as $ref)
 			{
-				$montant_reste = $ba->decompte($PDOdb, $montant_reste, $localObject->id);
+				//Load BonAchat by ref	
+				$ba = new TBonAchat;
+				$ba->loadByNumero($ATMdb, $ref);
+				
+				$remise = new DiscountAbsolute($db);
+	    		$result = $remise->fetch($ba->fk_discount);
+				
+				if ($result > 0) 
+				{
+					$montant_reste = $ba->decompte($ATMdb, $montant_reste, $localObject->id);
+				}
+				
 			}
-			
 		}
 		
 		//Permet de générer la référence
