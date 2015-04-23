@@ -300,8 +300,8 @@ class Interfacecpfsynctrigger
 			*/
 		}
 		
-		// Payments
-        elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'PAYMENT_CUSTOMER_CREATE' || $action == 'PAYMENT_DELETE' || $action == 'PAYMENT_ADD_TO_BANK')) 
+		// Payments																															//Pas besoin
+        elseif (!empty($conf->global->CPFSYNC_SHARE_INVOICE) && ($action == 'PAYMENT_CUSTOMER_CREATE' || $action == 'PAYMENT_DELETE' /*|| $action == 'PAYMENT_ADD_TO_BANK'*/)) 
         {
 			//TODO dans le cas d'un PAYMENT_DELETE il faudrait trouver le moyen de récupérer le facid de l'object ($object->facid = null et impossible de faire une requête sql)
 			//$object->getBillsArray() est senssé renvoyer la liste des factures sur lesquels porte le paiement mais retourne array vide
