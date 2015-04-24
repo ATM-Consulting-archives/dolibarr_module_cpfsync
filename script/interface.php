@@ -185,6 +185,8 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			
 			$conf->entity = (int) $row['entity'];
 		
+			if ($doli_action == 'PAYMENT_ADD_TO_BANK') $res_id[] = $row['rowid']; //Permet de débloquer les events inutilisés 
+		
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
 				if (_create($ATMdb, $db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
