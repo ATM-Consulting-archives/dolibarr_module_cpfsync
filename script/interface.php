@@ -312,11 +312,13 @@ function _create(&$ATMdb, &$db, &$conf, &$user, $class, &$object, $facnumber = '
 	{
 		//$localObject->facnumber = $localObject->getNextNumRef($localObject->client);
 		_initDbFacture($db, $localObject);
-
+	
+		
+	
 		//Récupération du bon client en distant
 		if (_fetch($db, $conf, $localObject->client, $localObject->client, 'Societe') <= 0) return -1;
 		$localObject->socid = $localObject->client->id;
-		
+	
 		//Récupère l'id des produits qui correspond aux référence pour garder le/les bons produits dans la facture
 		foreach ($localObject->lines as &$facLine)
 		{
@@ -529,6 +531,8 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 		case 'Societe':
 			//Recherche sur code_client ou si non renseigné code_fournisseur
 			$sql.= 'societe WHERE ';
+			
+			if (!$object->code_client && !$object->code_fournisseur) _getObjectDistance($db, $object, 'code_client');
 			
 			if ($object->code_client) $sql .= 'code_client = "'.$db->escape($object->code_client).'"';
 			elseif ($object->code_fournisseur) $sql .= 'code_fournisseur = "'.$db->escape($object->code_fournisseur).'"';
@@ -792,6 +796,10 @@ function _getObjectDistance(&$db, &$object, $type)
 	{
 		$data['product_fourn_price_id'] = $object->product_fourn_price_id; //il s'agit de l'id d'origine donc je peux le renvoyer tel quel pour récupérer la référence
 	}
+	elseif ($type == 'code_client')
+	{
+		$data['fk_soc'] = $object->id;
+	}
 	
 	$data_build  = http_build_query($data);
 	
@@ -829,6 +837,14 @@ function _getObjectDistance(&$db, &$object, $type)
 	elseif ($type == 'ref_price_fournisseur')
 	{
 		return $res;
+	}
+	elseif ($type == 'code_client')
+	{
+		$res = unserialize($res);
+		$object->code_client =	$res['code_client'];
+		$object->code_fournisseur =	$res['code_fournisseur'];
+		
+		return 1;
 	}
 	
 	return 0;	
@@ -871,7 +887,21 @@ function _sendObject(&$PDOdb, &$conf, &$db)
 			
 			$productFournisseur = new ProductFournisseur($db);
 			$productFournisseur->fetch_product_fournisseur_price(__get('product_fourn_price_id'));
+			
 			return $productFournisseur->fourn_ref;
+			break;
+			
+		case 'code_client':
+			dol_include_once('/societe/class/client.class.php');
+			
+			$res = array('code_client' => '', 'code_fournisseur' => '');
+			$client = new Societe($db);
+			$client->fetch(__get('fk_soc'));
+			
+			$res['code_client'] = $client->code_client;
+			$res['code_fournisseur'] = $client->code_fournisseur;
+			
+			return serialize($res);
 			break;
 			
 		default:

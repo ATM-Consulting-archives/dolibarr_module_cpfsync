@@ -142,7 +142,7 @@ class Interfacecpfsynctrigger
 		{
 			dolibarr_del_const($db, 'CPFSYNC_LOCK');
 		}
-		
+	
 		//Permet de bloquer les actions
     	if (!empty($conf->global->CPFSYNC_LOCK)) return 0;
 				
