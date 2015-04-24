@@ -102,7 +102,7 @@ class Interfacecpfsynctrigger
 		$PDOdb = new TPDOdb;
 		$event = new SyncEvent;
 		
-		$event->object = serialize($object);
+		$event->object = base64_encode(serialize($object));
 		$event->type_object = $type_object;
 		$event->doli_action = $action;
 		$event->facnumber = $facnumber;

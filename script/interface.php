@@ -1,9 +1,12 @@
 <?php
 
 define('INC_FROM_CRON_SCRIPT', true);
-set_time_limit(50);
+
 require('../config.php');
 require('../class/cpfsync.class.php');
+
+set_time_limit(119); //cron toute les 2min
+ini_set('memory_limit', '512M');
 
 //En phase de test, à retirer pour le create des produits de dolibarr => fait des if sur des variables potentiellements non initialisées
 //ini_set('display_errors',1);
@@ -83,7 +86,7 @@ function _sendData(&$ATMdb, $conf)
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
 	
-	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 100';
+	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
 	$ATMdb->Execute($sql);
 	
 	while ($ATMdb->Get_line())
@@ -179,13 +182,23 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		foreach ($data as $row)
 		{
+			$object = $ATMdb->Get_field('object');
+			$object = base64_decode($object_serialize, true);
+			if ($object === false) $object = $ATMdb->Get_field('object');
+		
 			$object = unserialize($row['object_serialize']);
+			
 			$class = $row['type_object'];
 			$doli_action = $row['doli_action'];
 			
+			if ($doli_action == 'PAYMENT_ADD_TO_BANK' || $object == null)
+			{
+				$res_id[] = $row['rowid'];
+				continue;
+			}
+			
+			
 			$conf->entity = (int) $row['entity'];
-		
-			if ($doli_action == 'PAYMENT_ADD_TO_BANK') $res_id[] = $row['rowid']; //Permet de débloquer les events inutilisés 
 		
 			if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
@@ -237,7 +250,7 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	return array('msg' => $msg, 'TIdSyncEvent' => $res_id, 'TErrors'=>$TErrors);
 }
 
-function _save(&$PDOdb, &$db, &$conf, $class, $object)
+function _save(&$PDOdb, &$db, &$conf, $class, &$object)
 {
 	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE numero=\''.$object->numero.'\'';
 	$PDOdb->Execute($sql);
@@ -279,7 +292,7 @@ function _save(&$PDOdb, &$db, &$conf, $class, $object)
 	return -1;
 }
 
-function _create(&$ATMdb, &$db, &$conf, &$user, $class, $object, $facnumber = '', $doli_action = '')
+function _create(&$ATMdb, &$db, &$conf, &$user, $class, &$object, $facnumber = '', $doli_action = '')
 {
 	if (_existObject($db, $conf, $object, $class) > 0) return 1; 
 	
@@ -398,11 +411,12 @@ function _create(&$ATMdb, &$db, &$conf, &$user, $class, $object, $facnumber = ''
 	return $res;
 }
 
-function _update(&$ATMdb, &$db, &$conf, &$user,&$TError, $class, $object, $doli_action)
+function _update(&$ATMdb, &$db, &$conf, &$user,&$TError, $class, &$object, $doli_action)
 {
 	$localObject = new $class($db);
 
     $res = _fetch($db, $conf, $localObject, $object, $class);
+	
 	if ($res>0)
 	{
 		if ($doli_action == 'BILL_PAYED')
@@ -442,8 +456,12 @@ function _update(&$ATMdb, &$db, &$conf, &$user,&$TError, $class, $object, $doli_
 				return $localObject->update($localObject->id, $user);
 				break;
 				
-			case 'Product':
-				if ($doli_action == 'PRODUCT_PRICE_MODIFY') return $localObject->updatePrice($localObject->price, $localObject->price_base_type, $user, $localObject->tva_tx, $localObject->price_min);
+			case 'Product':			
+				if ($doli_action == 'PRODUCT_PRICE_MODIFY') 
+				{
+					$newprice = $localObject->price_base_type == 'TTC' ? $localObject->price_ttc : $localObject->price;
+					return $localObject->updatePrice($newprice, $localObject->price_base_type, $user, $localObject->tva_tx, $localObject->price_min);
+				}
 				else return $localObject->update($localObject->id, $user);
 				break;
 			
@@ -474,7 +492,7 @@ function _update(&$ATMdb, &$db, &$conf, &$user,&$TError, $class, $object, $doli_
 	}
 }
 
-function _delete(&$db, &$conf, $class, $object, $facnumber)
+function _delete(&$db, &$conf, $class, &$object, $facnumber)
 {
 	$localObject = new $class($db);
 	
@@ -605,7 +623,7 @@ function _fetch(&$db, &$conf, &$localObject, &$object, $class, $facnumber = '')
 	return -1;
 }
 
-function _other(&$PDOdb, &$db, &$conf, $class, $object, $doli_action)
+function _other(&$PDOdb, &$db, &$conf, $class, &$object, $doli_action)
 {
 	
 	switch ($doli_action) {
@@ -712,7 +730,7 @@ function _updateLines(&$db, &$localObject, $oldLines)
  * Fonction custom qui reprend la fonction de la class Commonobject
  * check uniquement sur un id et ne fait pas de select ref qui n'existe pas dans la table llx_societe par exemple
  */
-function _isExistingObject(&$db, $element, $object)
+function _isExistingObject(&$db, $element, &$object)
 {
 	$champ = "facnumber";
 	$ref = $object->ref;
