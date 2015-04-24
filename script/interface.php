@@ -112,7 +112,7 @@ function _sendData(&$ATMdb, $conf)
 		'http' => array(
 		    'method' => 'POST'
 		    ,'content' => $data_build
-		    ,'timeout' => 40 //Si je n'ai pas de réponse dans les 40sec ma requête http s'arrête
+		    ,'timeout' => 100 //Si je n'ai pas de réponse dans les 100sec ma requête http s'arrête
 		    ,'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
                 . "Content-Length: " . strlen($data_build) . "\r\n",
 		)
