@@ -119,7 +119,7 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-//print $res;
+print $res;
 	$res = json_decode($res);
 
 	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
@@ -182,11 +182,11 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 		
 		foreach ($data as $row)
 		{
-			$object = $ATMdb->Get_field('object');
-			$object = base64_decode($object_serialize, true);
-			if ($object === false) $object = $ATMdb->Get_field('object');
+			$object = $row['object_serialize'];
+			$object = base64_decode($object, true);
+			if ($object === false) $object = $row['object_serialize'];
 		
-			$object = unserialize($row['object_serialize']);
+			$object = unserialize($object);
 			
 			$class = $row['type_object'];
 			$doli_action = $row['doli_action'];
