@@ -14,6 +14,7 @@
 
 
 	dol_include_once('/product/class/product.class.php');
+	dol_include_once('/cpfsync/class/cpfsync.class.php');
 
 	$TStock=array();
 
@@ -33,7 +34,7 @@
 		)	;
 	}
 	
-	
+
 	$event =new SyncEvent;
 	$event->entity = $entity;
 	$event->doli_action = 'VERIFY_STOCK';
@@ -41,4 +42,4 @@
 	$event->type_object = 'STOCK_LIST';
 	$event->save($PDOdb);
 	
-	
+//	var_dump($event);
