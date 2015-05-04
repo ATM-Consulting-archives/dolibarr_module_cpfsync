@@ -87,9 +87,8 @@ function _sendData(&$ATMdb, $conf)
 	$data = array('data' => array());
 	
 	$limit = GETPOST('limit');
-        if(empty($limit)) $limit = 20;
-
-        $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT '.$limit;
+    if(empty($limit)) $limit = 20;
+    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE errored!=1 ORDER BY rowid LIMIT '.$limit;
 	
 	//$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
 	$ATMdb->Execute($sql);
@@ -124,16 +123,16 @@ function _sendData(&$ATMdb, $conf)
 	));
 	
 	$res = file_get_contents($url_distant, false, $context);
-print $res;
+	print $res;
 	$res = json_decode($res);
 
-	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent);
+	_deleteCurrentEvent($ATMdb, $res->TIdSyncEvent, $data);
 	
 	if ($res->msg == 'ok') return 'Synchronisation sans erreur'; 
 	else return 'Synchronisation partielle';
 }
 
-function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent)
+function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent, $TSendEvent)
 {
 	if (!is_array($TIdSyncEvent)) return 0;
 	
@@ -142,6 +141,16 @@ function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent)
 		$syncEvent = new SyncEvent;
 		$syncEvent->load($ATMdb, $id_sync_event);
 		$syncEvent->delete($ATMdb);
+	}
+	
+	foreach ($TSendEvent as $event)
+	{
+		$syncEvent = new SyncEvent;
+		if($syncEvent->load($ATMdb, $event['rowid'])) {
+			$syncEvent->errored=1;
+			$syncEvent->save($ATMdb);
+		}
+		
 	}
 	
 	return 1;
