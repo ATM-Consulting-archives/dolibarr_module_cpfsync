@@ -292,10 +292,10 @@ function _verify_stock(&$PDOdb, &$TStock) {
 			
 			if($obj->reel != $stock['stock']) {
 				
-				$sql="REPLACE INTO ".MAIN_DB_PREFIX."_product_stock (fk_product, fk_entrepot, reel)
+				$sql="REPLACE INTO ".MAIN_DB_PREFIX."product_stock (fk_product, fk_entrepot, reel)
 						VALUES (".(int)$product->id.",".(int)$stock['fk_entrepot'].",".(double)$stock['stock'].")";
-				exit ($sql);
 				
+				$PDOdb->Execute($sql);
 			}
 			
 		}
