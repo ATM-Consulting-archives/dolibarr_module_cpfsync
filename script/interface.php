@@ -87,11 +87,13 @@ function _sendData(&$ATMdb, $conf)
 	$data = array('data' => array());
 	
 	$limit = GETPOST('limit');
-    if(empty($limit)) $limit = 20;
+	if(empty($limit)) $limit = 20;
 	
 	$doli_action = GETPOST('doli_action');
+	$include_error = GETPOST('include_error');
 	
-    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE (errored=0 OR errored IS NULL) ';
+    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE 1 ';
+    if(!$include_error) $sql.=" AND (errored=0 OR errored IS NULL) "; 
     if($doli_action) $sql.=" AND doli_action='".$doli_action."'";
     $sql.=' ORDER BY rowid LIMIT '.$limit;
 	
@@ -147,13 +149,15 @@ function _deleteCurrentEvent(&$ATMdb, $TIdSyncEvent, $TSendEvent)
 		$syncEvent->load($ATMdb, $id_sync_event);
 		$syncEvent->delete($ATMdb);
 	}
-	
-	foreach ($TSendEvent as $event)
+//	var_dump($TSendEvent);
+	foreach ($TSendEvent['data'] as $event_sync)
 	{
+//exit($event_sync['rowid']);
 		$syncEvent = new SyncEvent;
-		if($syncEvent->load($ATMdb, $event['rowid'])) {
+		if($syncEvent->load($ATMdb, $event_sync['rowid'])) {
 			$syncEvent->errored=1;
 			$syncEvent->save($ATMdb);
+//exit('la');
 		}
 		
 	}
