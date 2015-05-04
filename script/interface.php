@@ -88,7 +88,7 @@ function _sendData(&$ATMdb, $conf)
 	
 	$limit = GETPOST('limit');
     if(empty($limit)) $limit = 20;
-    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE errored!=1 ORDER BY rowid LIMIT '.$limit;
+    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE (errored=0 OR errored IS NULL)  ORDER BY rowid LIMIT '.$limit;
 	
 	//$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
 	$ATMdb->Execute($sql);
