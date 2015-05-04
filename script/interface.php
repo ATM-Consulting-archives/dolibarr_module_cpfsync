@@ -88,7 +88,12 @@ function _sendData(&$ATMdb, $conf)
 	
 	$limit = GETPOST('limit');
     if(empty($limit)) $limit = 20;
-    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE (errored=0 OR errored IS NULL)  ORDER BY rowid LIMIT '.$limit;
+	
+	$doli_action = GETPOST('doli_action');
+	
+    $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event WHERE (errored=0 OR errored IS NULL) ';
+    if($doli_action) $sql.=" AND doli_action='".$doli_action."'";
+    $sql.=' ORDER BY rowid LIMIT '.$limit;
 	
 	//$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
 	$ATMdb->Execute($sql);
@@ -214,7 +219,10 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 			
 			$conf->entity = (int) $row['entity'];
 		
-			if (in_array($doli_action, SyncEvent::$TActionCreate))
+			if($doli_action=='VERIFY_STOCK') {
+				if (_verify_stock($ATMdb, $object) > 0) $res_id[] = $row['rowid'];
+			}
+			else if (in_array($doli_action, SyncEvent::$TActionCreate))
 			{
 				if (_create($ATMdb, $db, $conf, $user, $class, $object, $row['facnumber']) > 0) $res_id[] = $row['rowid'];			
 			}
@@ -263,7 +271,16 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	
 	return array('msg' => $msg, 'TIdSyncEvent' => $res_id, 'TErrors'=>$TErrors);
 }
-
+function _verify_stock(&$PDOdb, &$TStock) {
+	
+	foreach($TStock as $stock) {
+		
+		
+		
+	}
+	
+	return 1;
+}
 function _save(&$PDOdb, &$db, &$conf, $class, &$object)
 {
 	$sql = 'SELECT rowid FROM '.MAIN_DB_PREFIX.'caisse_bonachat WHERE numero=\''.$object->numero.'\'';
