@@ -9,7 +9,7 @@
 	if(empty($fk_entrepot)) exit('fk_entrepot ?');
 
 	$PDOdb=new TPDOdb;
-	$Tab = $PDOdb->ExecuteAsArray("SELECT fk_product FROM ".MAIN_DB_PREFIX."product_stock WHERE fk_entrepot=".(int)$fk_entrepot);
+	$Tab = $PDOdb->ExecuteAsArray("SELECT fk_product,reel FROM ".MAIN_DB_PREFIX."product_stock WHERE fk_entrepot=".(int)$fk_entrepot);
 
 
 	dol_include_once('/product/class/product.class.php');
@@ -19,16 +19,16 @@
 	foreach($Tab as $row ) {
 
 		$product=new Product($db);
-		$product->fetch($row->rowid);
+		$product->fetch($row->fk_product);
 		
-		$product->load_stock();
+//		$product->load_stock();
 		
-		$stock = $product->stock_warehouse[$fk_entrepot]->real;
+//		$stock = $product->stock_warehouse[$fk_entrepot]->real;
 	
 		$TStock[]= array(
 			'ref'=>$product->ref
 			,'fk_entrepot'=>$fk_entrepot
-			,'stock'=>$stock
+			,'stock'=>$row->reel
 		)	;
 	}
 	
