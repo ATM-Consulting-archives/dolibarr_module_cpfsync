@@ -5,8 +5,9 @@
 	require('../config.php');
 
 	$fk_entrepot = GETPOST('fk_entrepot');
+	$entity = GETPOST('entity');
 	
-	if(empty($fk_entrepot)) exit('fk_entrepot ?');
+	if(empty($fk_entrepot) || empty($entity)) exit('fk_entrepot,entity ?');
 
 	$PDOdb=new TPDOdb;
 	$Tab = $PDOdb->ExecuteAsArray("SELECT fk_product,reel FROM ".MAIN_DB_PREFIX."product_stock WHERE fk_entrepot=".(int)$fk_entrepot);
@@ -33,4 +34,11 @@
 	}
 	
 	
-	var_dump($TStock);
+	$event =new SyncEvent;
+	$event->entity = $entity;
+	$event->doli_action = 'VERIFY_STOCK';
+	$event->object = base64_encode(serialize($TStock));
+	$event->type_object = 'STOCK_LIST';
+	$event->save($PDOdb);
+	
+	
