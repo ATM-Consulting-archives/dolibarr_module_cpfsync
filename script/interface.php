@@ -276,10 +276,29 @@ function _refreshData(&$ATMdb, &$conf, &$db)
 	return array('msg' => $msg, 'TIdSyncEvent' => $res_id, 'TErrors'=>$TErrors);
 }
 function _verify_stock(&$PDOdb, &$TStock) {
+	global $db,$conf,$user;
+	
+	dol_include_once('/product/class/product.class.php');
 	
 	foreach($TStock as $stock) {
 		
-		
+		$product = new Product($db);
+		if($product->fetch(0, $stock['ref'])>0) {
+			
+			$PDOdb->Execute("SELECT reel FROM ".MAIN_DB_PREFIX."_product_stock WHERE fk_product=".(int)$product->id." AND fk_entrepot=".(int)$stock['fk_entrepot'] );
+			if($obj = $PDOdb->Get_line()) {
+				
+			}
+			
+			if($obj->reel != $stock['stock']) {
+				
+				$sql="REPLACE INTO ".MAIN_DB_PREFIX."_product_stock (fk_product, fk_entrepot, reel)
+						VALUES (".(int)$product->id.",".(int)$stock['fk_entrepot'].",".(double)$stock['stock'].")";
+				exit ($sql);
+				
+			}
+			
+		}
 		
 	}
 	
