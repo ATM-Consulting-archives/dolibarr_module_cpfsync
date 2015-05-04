@@ -86,7 +86,12 @@ function _sendData(&$ATMdb, $conf)
 	//Formatage du tableau pour la réception en POST
 	$data = array('data' => array());
 	
-	$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
+	$limit = GETPOST('limit');
+        if(empty($limit)) $limit = 20;
+
+        $sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT '.$limit;
+	
+	//$sql = 'SELECT * FROM '.MAIN_DB_PREFIX.'sync_event ORDER BY rowid LIMIT 20';
 	$ATMdb->Execute($sql);
 	
 	while ($ATMdb->Get_line())
